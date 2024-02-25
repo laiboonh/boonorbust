@@ -68,6 +68,8 @@ defmodule BoonorbustWeb.Router do
       on_mount: [{BoonorbustWeb.UserAuth, :ensure_authenticated}] do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+
+      live "/assets/new", Assets.AssetLive, :new
     end
   end
 
