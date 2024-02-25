@@ -6,7 +6,7 @@ defmodule Boonorbust.Accounts do
   import Ecto.Query, warn: false
   alias Boonorbust.Repo
 
-  alias Boonorbust.Accounts.{User, UserToken, UserNotifier}
+  alias Boonorbust.Accounts.{User, UserNotifier, UserToken}
 
   ## Database getters
 

@@ -1,9 +1,10 @@
 defmodule BoonorbustWeb.UserAuthTest do
   use BoonorbustWeb.ConnCase, async: true
 
-  alias Phoenix.LiveView
   alias Boonorbust.Accounts
   alias BoonorbustWeb.UserAuth
+  alias Phoenix.LiveView
+
   import Boonorbust.AccountsFixtures
 
   @remember_me_cookie "_boonorbust_web_user_remember_me"
