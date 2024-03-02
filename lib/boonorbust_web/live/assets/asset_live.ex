@@ -8,7 +8,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
     ~H"""
     <.header class="text-center">
       Assets
-      <:subtitle><%= @action %></:subtitle>
+      <:subtitle><%= @action |> String.capitalize() %></:subtitle>
     </.header>
 
     <div class="space-y-12 divide-y">
@@ -17,11 +17,22 @@ defmodule BoonorbustWeb.Assets.AssetLive do
           <.input field={@asset_form[:name]} label="Name" required />
           <.input field={@asset_form[:user_id]} label="User ID" required readonly />
           <:actions>
-            <.button phx-disable-with="..."><%= @action %></.button>
+            <.button phx-disable-with="..."><%= @action |> String.capitalize() %></.button>
           </:actions>
         </.simple_form>
       </div>
     </div>
+
+    <%= if @assets != nil do %>
+      <.table id="assets" rows={@assets}>
+        <:col :let={asset} label="Id"><%= asset.id %></:col>
+        <:col :let={asset} label="Name"><%= asset.name %></:col>
+        <:col :let={asset} label="Action">
+          <.link patch={~p"/assets/#{asset.id}"}><.icon name="hero-pencil-square-solid" /></.link>
+          <.link patch={~p"/assets/new"}><.icon name="hero-document-plus-solid" /></.link>
+        </:col>
+      </.table>
+    <% end %>
     """
   end
 
@@ -32,6 +43,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
           asset_changeset = Asset.changeset(%Asset{}, %{})
 
           socket
+          |> assign(:assets, Assets.all())
           |> assign(:action, "update")
           |> assign(:asset_form, to_form(asset_changeset))
           |> put_flash(:error, "Asset #{id} not found")
@@ -40,9 +52,9 @@ defmodule BoonorbustWeb.Assets.AssetLive do
           asset_changeset = Asset.changeset(asset, %{})
 
           socket
+          |> assign(:assets, Assets.all())
           |> assign(:action, "update")
           |> assign(:asset_form, to_form(asset_changeset))
-          |> assign(:trigger_submit, false)
       end
 
     {:ok, socket}
@@ -55,24 +67,55 @@ defmodule BoonorbustWeb.Assets.AssetLive do
 
     socket =
       socket
+      |> assign(:assets, Assets.all())
       |> assign(:action, "insert")
       |> assign(:asset_form, to_form(asset_changeset))
-      |> assign(:trigger_submit, false)
 
     {:ok, socket}
+  end
+
+  def handle_params(%{"id" => id}, _uri, socket) do
+    asset = Assets.get(id)
+    asset_changeset = Asset.changeset(asset, %{})
+
+    socket =
+      socket
+      |> assign(:assets, Assets.all())
+      |> assign(:action, "update")
+      |> assign(:asset_form, to_form(asset_changeset))
+
+    {:noreply, socket}
+  end
+
+  def handle_params(_params, _uri, socket) do
+    user = socket.assigns.current_user
+
+    socket =
+      socket
+      |> assign(:action, "insert")
+      |> assign(:asset_form, to_form(Asset.changeset(%Asset{}, %{user_id: user.id})))
+
+    {:noreply, socket}
   end
 
   def handle_event("insert", params, socket) do
     %{"asset" => %{"name" => name, "user_id" => user_id}} = params
 
-    case Assets.create(%{name: name, user_id: user_id}) do
-      {:ok, asset} ->
-        info = "Asset #{asset.name} Inserted"
-        {:noreply, socket |> put_flash(:info, info)}
+    socket =
+      case Assets.create(%{name: name, user_id: user_id}) do
+        {:ok, asset} ->
+          info = "Asset #{asset.name} Inserted"
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, :asset_form, to_form(Map.put(changeset, :action, :insert)))}
-    end
+          socket
+          |> assign(:assets, Assets.all())
+          |> assign(:asset_form, to_form(Asset.changeset(%Asset{}, %{user_id: user_id})))
+          |> put_flash(:info, info)
+
+        {:error, changeset} ->
+          assign(socket, :asset_form, to_form(Map.put(changeset, :action, :insert)))
+      end
+
+    {:noreply, socket}
   end
 
   def handle_event("update", params, socket) do
@@ -80,13 +123,19 @@ defmodule BoonorbustWeb.Assets.AssetLive do
 
     %{"asset" => %{"name" => name}} = params
 
-    case Assets.update(id, %{name: name}) do
-      {:ok, asset} ->
-        info = "Asset #{asset.name} Updated"
-        {:noreply, socket |> put_flash(:info, info)}
+    socket =
+      case Assets.update(id, %{name: name}) do
+        {:ok, asset} ->
+          info = "Asset #{asset.name} Updated"
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, :asset_form, to_form(Map.put(changeset, :action, :update)))}
-    end
+          socket
+          |> assign(:assets, Assets.all())
+          |> put_flash(:info, info)
+
+        {:error, changeset} ->
+          assign(socket, :asset_form, to_form(Map.put(changeset, :action, :update)))
+      end
+
+    {:noreply, socket}
   end
 end

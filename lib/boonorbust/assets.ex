@@ -22,4 +22,11 @@ defmodule Boonorbust.Assets do
     |> Asset.changeset(attrs)
     |> Repo.update()
   end
+
+  @spec all :: [Asset.t()]
+  def all do
+    Asset
+    |> order_by(desc: :inserted_at)
+    |> Repo.all()
+  end
 end
