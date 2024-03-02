@@ -29,4 +29,10 @@ defmodule Boonorbust.Assets do
     |> order_by(desc: :inserted_at)
     |> Repo.all()
   end
+
+  @spec delete(integer()) :: {:ok, Asset.t()} | {:error, Ecto.Changeset.t()}
+  def delete(id) do
+    get(id)
+    |> Repo.delete()
+  end
 end

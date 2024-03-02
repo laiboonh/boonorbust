@@ -50,4 +50,22 @@ defmodule BoonorbustWeb.Assets.AssetLiveTest do
       assert result =~ "has already been taken"
     end
   end
+
+  describe "Delete" do
+    test "success", %{conn: conn} do
+      user = user_fixture()
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/assets/new")
+
+      result =
+        lv
+        |> form("#asset_form",
+          asset: %{"name" => "foo", "user_id" => user.id}
+        )
+        |> render_submit()
+
+      assert result =~ "Asset foo Inserted"
+
+      assert lv |> element(~s{[phx-click="delete"]}) |> render_click() =~ "Asset foo Deleted"
+    end
+  end
 end

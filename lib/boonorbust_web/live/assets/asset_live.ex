@@ -30,6 +30,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
         <:col :let={asset} label="Action">
           <.link patch={~p"/assets/#{asset.id}"}><.icon name="hero-pencil-square-solid" /></.link>
           <.link patch={~p"/assets/new"}><.icon name="hero-document-plus-solid" /></.link>
+          <span phx-click="delete" phx-value-id={asset.id}><.icon name="hero-trash-solid" /></span>
         </:col>
       </.table>
     <% end %>
@@ -134,6 +135,23 @@ defmodule BoonorbustWeb.Assets.AssetLive do
 
         {:error, changeset} ->
           assign(socket, :asset_form, to_form(Map.put(changeset, :action, :update)))
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("delete", %{"id" => id}, socket) do
+    socket =
+      case Assets.delete(id) do
+        {:ok, asset} ->
+          info = "Asset #{asset.name} Deleted"
+
+          socket
+          |> assign(:assets, Assets.all())
+          |> put_flash(:info, info)
+
+        {:error, changeset} ->
+          assign(socket, :asset_form, to_form(Map.put(changeset, :action, :delete)))
       end
 
     {:noreply, socket}
