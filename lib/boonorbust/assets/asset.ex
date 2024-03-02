@@ -2,6 +2,8 @@ defmodule Boonorbust.Assets.Asset do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{}
+
   schema "assets" do
     field :name, :string
     belongs_to :user, Boonorbust.Accounts.User

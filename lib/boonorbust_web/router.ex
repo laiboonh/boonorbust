@@ -70,6 +70,7 @@ defmodule BoonorbustWeb.Router do
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
 
       live "/assets/new", Assets.AssetLive, :new
+      live "/assets/:id", Assets.AssetLive, :edit
     end
   end
 
