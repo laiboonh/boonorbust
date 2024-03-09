@@ -105,15 +105,15 @@ defmodule BoonorbustWeb.Assets.AssetLive do
     socket =
       case Assets.create(%{name: name, user_id: user_id}) do
         {:ok, asset} ->
-          info = "Asset #{asset.name} Inserted"
-
           socket
           |> assign(:assets, Assets.all())
           |> assign(:asset_form, to_form(Asset.changeset(%Asset{}, %{user_id: user_id})))
-          |> put_flash(:info, info)
+          |> put_flash(:info, "Asset #{asset.name} Inserted")
 
         {:error, changeset} ->
-          assign(socket, :asset_form, to_form(Map.put(changeset, :action, :insert)))
+          socket
+          |> assign(:asset_form, to_form(Map.put(changeset, :action, :insert)))
+          |> put_flash(:error, "Asset Insertion Failed")
       end
 
     {:noreply, socket}
