@@ -58,7 +58,7 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
         |> render_submit()
 
       assert result =~ ~r/Trade \d+ Updated/
-      assert Trades.get(trade.id).transacted_at == ~D[2024-04-15]
+      assert Trades.get(trade.id, user.id).transacted_at == ~D[2024-04-15]
     end
   end
 

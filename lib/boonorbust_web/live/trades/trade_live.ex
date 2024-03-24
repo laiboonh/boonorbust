@@ -83,13 +83,15 @@ defmodule BoonorbustWeb.Trades.TradeLive do
   end
 
   def mount(%{"id" => id}, _session, socket) do
+    user_id = socket.assigns.current_user.id
+
     socket =
-      case Trades.get(id) do
+      case Trades.get(id, user_id) do
         nil ->
           trade_changeset = Trade.changeset(%Trade{}, %{})
 
           socket
-          |> assign(:trades, Trades.all())
+          |> assign(:trades, Trades.all(user_id))
           |> assign(:action, "update")
           |> assign(:trade_form, to_form(trade_changeset))
           |> put_flash(:error, "Trade #{id} not found")
@@ -98,10 +100,10 @@ defmodule BoonorbustWeb.Trades.TradeLive do
           trade_changeset = Trade.changeset(trade, %{})
 
           asset_options =
-            Boonorbust.Assets.all() |> Enum.map(fn asset -> {asset.name, asset.id} end)
+            Boonorbust.Assets.all(user_id) |> Enum.map(fn asset -> {asset.name, asset.id} end)
 
           socket
-          |> assign(:trades, Trades.all())
+          |> assign(:trades, Trades.all(user_id))
           |> assign(:action, "update")
           |> assign(:trade_form, to_form(trade_changeset))
           |> assign(:asset_options, asset_options)
@@ -111,15 +113,16 @@ defmodule BoonorbustWeb.Trades.TradeLive do
   end
 
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_user
+    user_id = socket.assigns.current_user.id
 
-    trade_changeset = Trade.changeset(%Trade{}, %{user_id: user.id})
+    trade_changeset = Trade.changeset(%Trade{}, %{user_id: user_id})
 
-    asset_options = Boonorbust.Assets.all() |> Enum.map(fn asset -> {asset.name, asset.id} end)
+    asset_options =
+      Boonorbust.Assets.all(user_id) |> Enum.map(fn asset -> {asset.name, asset.id} end)
 
     socket =
       socket
-      |> assign(:trades, Trades.all())
+      |> assign(:trades, Trades.all(user_id))
       |> assign(:action, "insert")
       |> assign(:trade_form, to_form(trade_changeset))
       |> assign(:asset_options, asset_options)
@@ -128,12 +131,13 @@ defmodule BoonorbustWeb.Trades.TradeLive do
   end
 
   def handle_params(%{"id" => id}, _uri, socket) do
-    trade = Trades.get(id)
+    user_id = socket.assigns.current_user.id
+    trade = Trades.get(id, user_id)
     trade_changeset = Trade.changeset(trade, %{})
 
     socket =
       socket
-      |> assign(:trades, Trades.all())
+      |> assign(:trades, Trades.all(user_id))
       |> assign(:action, "update")
       |> assign(:trade_form, to_form(trade_changeset))
 
@@ -176,7 +180,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
            }) do
         {:ok, trade} ->
           socket
-          |> assign(:trades, Trades.all())
+          |> assign(:trades, Trades.all(user_id))
           |> assign(:trade_form, to_form(Trade.changeset(%Trade{}, %{user_id: user_id})))
           |> put_flash(:info, "Trade #{trade.id} Inserted")
 
@@ -205,7 +209,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     } = params
 
     socket =
-      case Trades.update(id, %{
+      case Trades.update(id, user_id, %{
              from_asset_id: from_asset_id,
              from_qty: from_qty,
              to_asset_id: to_asset_id,
@@ -218,7 +222,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
           info = "Trade #{trade.id} Updated"
 
           socket
-          |> assign(:trades, Trades.all())
+          |> assign(:trades, Trades.all(user_id))
           |> put_flash(:info, info)
 
         {:error, changeset} ->
@@ -229,13 +233,15 @@ defmodule BoonorbustWeb.Trades.TradeLive do
   end
 
   def handle_event("delete", %{"id" => id}, socket) do
+    user_id = socket.assigns.current_user.id
+
     socket =
-      case Trades.delete(id) do
+      case Trades.delete(id, user_id) do
         {:ok, trade} ->
           info = "Trade #{trade.id} Deleted"
 
           socket
-          |> assign(:trades, Trades.all())
+          |> assign(:trades, Trades.all(user_id))
           |> put_flash(:info, info)
 
         {:error, changeset} ->

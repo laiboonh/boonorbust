@@ -11,28 +11,31 @@ defmodule Boonorbust.Assets do
     |> Repo.insert()
   end
 
-  @spec get(integer()) :: Asset.t() | nil
-  def get(id) do
-    Repo.get(Asset, id)
+  @spec get(integer(), integer()) :: Asset.t() | nil
+  def get(id, user_id) do
+    Asset
+    |> where([a], a.id == ^id and a.user_id == ^user_id)
+    |> Repo.one()
   end
 
-  @spec update(any(), any()) :: {:ok, Asset.t()} | {:error, Ecto.Changeset.t()}
-  def update(id, attrs) do
-    get(id)
+  @spec update(integer(), integer(), map()) :: {:ok, Asset.t()} | {:error, Ecto.Changeset.t()}
+  def update(id, user_id, attrs) do
+    get(id, user_id)
     |> Asset.changeset(attrs)
     |> Repo.update()
   end
 
-  @spec all :: [Asset.t()]
-  def all do
+  @spec all(integer()) :: [Asset.t()]
+  def all(user_id) do
     Asset
+    |> where([a], a.user_id == ^user_id)
     |> order_by(desc: :inserted_at)
     |> Repo.all()
   end
 
-  @spec delete(integer()) :: {:ok, Asset.t()} | {:error, Ecto.Changeset.t()}
-  def delete(id) do
-    get(id)
+  @spec delete(integer(), integer()) :: {:ok, Asset.t()} | {:error, Ecto.Changeset.t()}
+  def delete(id, user_id) do
+    get(id, user_id)
     |> Repo.delete()
   end
 end

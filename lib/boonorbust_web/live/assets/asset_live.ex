@@ -38,13 +38,15 @@ defmodule BoonorbustWeb.Assets.AssetLive do
   end
 
   def mount(%{"id" => id}, _session, socket) do
+    user_id = socket.assigns.current_user.id
+
     socket =
-      case Assets.get(id) do
+      case Assets.get(id, user_id) do
         nil ->
           asset_changeset = Asset.changeset(%Asset{}, %{})
 
           socket
-          |> assign(:assets, Assets.all())
+          |> assign(:assets, Assets.all(user_id))
           |> assign(:action, "update")
           |> assign(:asset_form, to_form(asset_changeset))
           |> put_flash(:error, "Asset #{id} not found")
@@ -53,7 +55,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
           asset_changeset = Asset.changeset(asset, %{})
 
           socket
-          |> assign(:assets, Assets.all())
+          |> assign(:assets, Assets.all(user_id))
           |> assign(:action, "update")
           |> assign(:asset_form, to_form(asset_changeset))
       end
@@ -62,13 +64,13 @@ defmodule BoonorbustWeb.Assets.AssetLive do
   end
 
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_user
+    user_id = socket.assigns.current_user.id
 
-    asset_changeset = Asset.changeset(%Asset{}, %{user_id: user.id})
+    asset_changeset = Asset.changeset(%Asset{}, %{user_id: user_id})
 
     socket =
       socket
-      |> assign(:assets, Assets.all())
+      |> assign(:assets, Assets.all(user_id))
       |> assign(:action, "insert")
       |> assign(:asset_form, to_form(asset_changeset))
 
@@ -76,12 +78,13 @@ defmodule BoonorbustWeb.Assets.AssetLive do
   end
 
   def handle_params(%{"id" => id}, _uri, socket) do
-    asset = Assets.get(id)
+    user_id = socket.assigns.current_user.id
+    asset = Assets.get(id, user_id)
     asset_changeset = Asset.changeset(asset, %{})
 
     socket =
       socket
-      |> assign(:assets, Assets.all())
+      |> assign(:assets, Assets.all(user_id))
       |> assign(:action, "update")
       |> assign(:asset_form, to_form(asset_changeset))
 
@@ -89,12 +92,12 @@ defmodule BoonorbustWeb.Assets.AssetLive do
   end
 
   def handle_params(_params, _uri, socket) do
-    user = socket.assigns.current_user
+    user_id = socket.assigns.current_user.id
 
     socket =
       socket
       |> assign(:action, "insert")
-      |> assign(:asset_form, to_form(Asset.changeset(%Asset{}, %{user_id: user.id})))
+      |> assign(:asset_form, to_form(Asset.changeset(%Asset{}, %{user_id: user_id})))
 
     {:noreply, socket}
   end
@@ -106,7 +109,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
       case Assets.create(%{name: name, user_id: user_id}) do
         {:ok, asset} ->
           socket
-          |> assign(:assets, Assets.all())
+          |> assign(:assets, Assets.all(user_id))
           |> assign(:asset_form, to_form(Asset.changeset(%Asset{}, %{user_id: user_id})))
           |> put_flash(:info, "Asset #{asset.name} Inserted")
 
@@ -120,17 +123,18 @@ defmodule BoonorbustWeb.Assets.AssetLive do
   end
 
   def handle_event("update", params, socket) do
+    user_id = socket.assigns.current_user.id
     %{hidden: [id: id]} = socket.assigns.asset_form
 
     %{"asset" => %{"name" => name}} = params
 
     socket =
-      case Assets.update(id, %{name: name}) do
+      case Assets.update(id, user_id, %{name: name}) do
         {:ok, asset} ->
           info = "Asset #{asset.name} Updated"
 
           socket
-          |> assign(:assets, Assets.all())
+          |> assign(:assets, Assets.all(user_id))
           |> put_flash(:info, info)
 
         {:error, changeset} ->
@@ -141,13 +145,15 @@ defmodule BoonorbustWeb.Assets.AssetLive do
   end
 
   def handle_event("delete", %{"id" => id}, socket) do
+    user_id = socket.assigns.current_user.id
+
     socket =
-      case Assets.delete(id) do
+      case Assets.delete(id, user_id) do
         {:ok, asset} ->
           info = "Asset #{asset.name} Deleted"
 
           socket
-          |> assign(:assets, Assets.all())
+          |> assign(:assets, Assets.all(user_id))
           |> put_flash(:info, info)
 
         {:error, changeset} ->
