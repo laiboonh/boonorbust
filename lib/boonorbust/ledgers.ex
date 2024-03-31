@@ -133,4 +133,14 @@ defmodule Boonorbust.Ledgers do
       })
     )
   end
+
+  @spec all(integer(), integer()) :: [Asset.t()]
+  def all(user_id, asset_id) do
+    Ledger
+    |> join(:inner, [l], t in assoc(l, :trade))
+    |> where([l, t], t.user_id == ^user_id and l.asset_id == ^asset_id)
+    |> order_by(asc: :id)
+    |> preload(:trade)
+    |> Repo.all()
+  end
 end

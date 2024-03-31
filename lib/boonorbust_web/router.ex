@@ -74,6 +74,8 @@ defmodule BoonorbustWeb.Router do
 
       live "/trades/new", Trades.TradeLive, :new
       live "/trades/:id", Trades.TradeLive, :edit
+
+      live "/ledgers", Ledgers.LedgerLive, :new
     end
   end
 
