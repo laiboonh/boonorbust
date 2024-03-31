@@ -5,7 +5,7 @@ defmodule BoonorbustWeb.Ledgers.LedgerLive do
   def render(assigns) do
     ~H"""
     <.header class="text-center">
-      Ledgers
+      Ledgers <span phx-click="recalculate"><.icon name="hero-calculator-solid" /></span>
     </.header>
 
     <div class="space-y-12 divide-y">
@@ -62,6 +62,17 @@ defmodule BoonorbustWeb.Ledgers.LedgerLive do
       socket
       |> assign(:ledgers, Ledgers.all(user_id, asset_id))
       |> assign(:action, "search")
+
+    {:noreply, socket}
+  end
+
+  def handle_event("recalculate", _params, socket) do
+    user_id = socket.assigns.current_user.id
+    :ok = Ledgers.recalculate(user_id)
+
+    socket =
+      socket
+      |> assign(:ledgers, Ledgers.all(user_id, socket.assigns.ledger_form.params["asset_id"]))
 
     {:noreply, socket}
   end

@@ -33,6 +33,14 @@ defmodule Boonorbust.Trades do
     |> Repo.all()
   end
 
+  @spec all_asc_trasacted_at(integer()) :: [Trade.t()]
+  def all_asc_trasacted_at(user_id) do
+    Trade
+    |> where([a], a.user_id == ^user_id)
+    |> order_by(asc: :transacted_at)
+    |> Repo.all()
+  end
+
   @spec delete(integer(), integer()) :: {:ok, Trade.t()} | {:error, Ecto.Changeset.t()}
   def delete(id, user_id) do
     get(id, user_id)

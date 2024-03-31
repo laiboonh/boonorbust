@@ -3,6 +3,7 @@ defmodule Boonorbust.Ledgers do
 
   alias Boonorbust.Ledgers.Ledger
   alias Boonorbust.Repo
+  alias Boonorbust.Trades
   alias Boonorbust.Trades.Trade
   alias Ecto.Multi
 
@@ -11,6 +12,14 @@ defmodule Boonorbust.Ledgers do
     %Ledger{}
     |> Ledger.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @spec recalculate(integer()) :: :ok
+  def recalculate(user_id) do
+    {_, _} = delete(user_id)
+
+    Trades.all_asc_trasacted_at(user_id)
+    |> Enum.each(&record(&1))
   end
 
   @spec record(Trade.t()) :: {:ok, any()} | {:error, any()} | Ecto.Multi.failure()
@@ -142,5 +151,13 @@ defmodule Boonorbust.Ledgers do
     |> order_by(asc: :id)
     |> preload(:trade)
     |> Repo.all()
+  end
+
+  @spec delete(integer()) :: {non_neg_integer(), nil | [term()]}
+  def delete(user_id) do
+    Ledger
+    |> join(:inner, [l], t in assoc(l, :trade))
+    |> where([l, t], t.user_id == ^user_id)
+    |> Repo.delete_all()
   end
 end
