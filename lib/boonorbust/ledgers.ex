@@ -143,7 +143,7 @@ defmodule Boonorbust.Ledgers do
     )
   end
 
-  @spec all(integer(), integer()) :: [Asset.t()]
+  @spec all(integer(), integer()) :: [Ledger.t()]
   def all(user_id, asset_id) do
     Ledger
     |> join(:inner, [l], t in assoc(l, :trade))
