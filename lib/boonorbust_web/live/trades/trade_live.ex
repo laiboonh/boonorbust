@@ -25,7 +25,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
             field={@trade_form[:from_qty]}
             label="From Quantity"
             type="number"
-            step="0.01"
+            step="0.00001"
             required
           />
           <.input
@@ -35,13 +35,19 @@ defmodule BoonorbustWeb.Trades.TradeLive do
             options={@asset_options}
             required
           />
-          <.input field={@trade_form[:to_qty]} label="To Quantity" type="number" step="0.01" required />
+          <.input
+            field={@trade_form[:to_qty]}
+            label="To Quantity"
+            type="number"
+            step="0.00001"
+            required
+          />
           <.input field={@trade_form[:user_id]} label="User ID" required readonly />
           <.input
             field={@trade_form[:to_asset_unit_cost]}
             label="To Asset Unit Cost"
             type="number"
-            step="0.01"
+            step="0.00001"
             required
           />
           <.input field={@trade_form[:transacted_at]} label="Transacted At" type="date" required />
