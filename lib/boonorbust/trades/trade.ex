@@ -27,13 +27,76 @@ defmodule Boonorbust.Trades.Trade do
       :user_id
     ])
     |> validate_required([
-      :from_asset_id,
-      :to_asset_id,
-      :from_qty,
-      :to_qty,
-      :to_asset_unit_cost,
       :transacted_at,
       :user_id
     ])
+    |> validate_either_or(:from_asset_id)
+    |> validate_either_or(:to_asset_id)
+    |> validate_maybe_required(:from_qty)
+    |> validate_maybe_required(:to_qty)
+  end
+
+  defp validate_either_or(changeset, :from_asset_id) do
+    if get_field(changeset, :from_asset_id) == nil do
+      if get_field(changeset, :to_asset_id) == nil do
+        add_error(
+          changeset,
+          :to_asset_id,
+          "From Asset and To Asset cannot be nil at the same time"
+        )
+      else
+        changeset
+      end
+    else
+      changeset
+    end
+  end
+
+  defp validate_either_or(changeset, :to_asset_id) do
+    if get_field(changeset, :to_asset_id) == nil do
+      if get_field(changeset, :from_asset_id) == nil do
+        add_error(
+          changeset,
+          :from_asset_id,
+          "From Asset and To Asset cannot be nil at the same time"
+        )
+      else
+        changeset
+      end
+    else
+      changeset
+    end
+  end
+
+  defp validate_maybe_required(changeset, :from_qty) do
+    if get_field(changeset, :from_asset_id) != nil do
+      if get_field(changeset, :from_qty) == nil do
+        add_error(
+          changeset,
+          :from_qty,
+          "From Asset and From Quantity need to be filled in at the same time"
+        )
+      else
+        changeset
+      end
+    else
+      changeset
+    end
+  end
+
+  defp validate_maybe_required(changeset, :to_qty) do
+    if get_field(changeset, :to_asset_id) != nil do
+      if get_field(changeset, :to_qty) == nil do
+        add_error(
+          changeset,
+          :to_qty,
+          "To Asset and To Quantity need to be filled in at the same time"
+        )
+      else
+        changeset
+      end
+    else
+      changeset
+    end
   end
 end

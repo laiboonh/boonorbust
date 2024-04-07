@@ -19,36 +19,21 @@ defmodule BoonorbustWeb.Trades.TradeLive do
             label="From Asset"
             type="select"
             options={@asset_options}
-            required
           />
-          <.input
-            field={@trade_form[:from_qty]}
-            label="From Quantity"
-            type="number"
-            step="0.00001"
-            required
-          />
+          <.input field={@trade_form[:from_qty]} label="From Quantity" type="number" step="0.00001" />
           <.input
             field={@trade_form[:to_asset_id]}
             label="To Asset"
             type="select"
             options={@asset_options}
-            required
           />
-          <.input
-            field={@trade_form[:to_qty]}
-            label="To Quantity"
-            type="number"
-            step="0.00001"
-            required
-          />
+          <.input field={@trade_form[:to_qty]} label="To Quantity" type="number" step="0.00001" />
           <.input field={@trade_form[:user_id]} label="User ID" required readonly />
           <.input
             field={@trade_form[:to_asset_unit_cost]}
             label="To Asset Unit Cost"
             type="number"
             step="0.00001"
-            required
           />
           <.input field={@trade_form[:transacted_at]} label="Transacted At" type="date" required />
           <:actions>
@@ -88,6 +73,13 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     asset_name
   end
 
+  def asset_options(user_id) do
+    [
+      {"-", nil}
+      | Boonorbust.Assets.all(user_id) |> Enum.map(fn asset -> {asset.name, asset.id} end)
+    ]
+  end
+
   def mount(%{"id" => id}, _session, socket) do
     user_id = socket.assigns.current_user.id
 
@@ -105,14 +97,11 @@ defmodule BoonorbustWeb.Trades.TradeLive do
         trade ->
           trade_changeset = Trade.changeset(trade, %{})
 
-          asset_options =
-            Boonorbust.Assets.all(user_id) |> Enum.map(fn asset -> {asset.name, asset.id} end)
-
           socket
           |> assign(:trades, Trades.all(user_id))
           |> assign(:action, "update")
           |> assign(:trade_form, to_form(trade_changeset))
-          |> assign(:asset_options, asset_options)
+          |> assign(:asset_options, asset_options(user_id))
       end
 
     {:ok, socket}
@@ -123,15 +112,12 @@ defmodule BoonorbustWeb.Trades.TradeLive do
 
     trade_changeset = Trade.changeset(%Trade{}, %{user_id: user_id})
 
-    asset_options =
-      Boonorbust.Assets.all(user_id) |> Enum.map(fn asset -> {asset.name, asset.id} end)
-
     socket =
       socket
       |> assign(:trades, Trades.all(user_id))
       |> assign(:action, "insert")
       |> assign(:trade_form, to_form(trade_changeset))
-      |> assign(:asset_options, asset_options)
+      |> assign(:asset_options, asset_options(user_id))
 
     {:ok, socket}
   end

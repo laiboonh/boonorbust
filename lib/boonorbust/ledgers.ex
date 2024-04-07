@@ -25,7 +25,8 @@ defmodule Boonorbust.Ledgers do
   @spec record(Trade.t()) :: {:ok, any()} | {:error, any()} | Ecto.Multi.failure()
   def record(trade) do
     sell(trade)
-    |> Multi.merge(fn %{insert_sell_asset_latest_ledger: sell_asset_latest_ledger} ->
+    |> Multi.merge(fn changes ->
+      sell_asset_latest_ledger = Map.get(changes, :insert_sell_asset_latest_ledger)
       buy(trade, sell_asset_latest_ledger)
     end)
     |> Repo.transaction()
@@ -37,6 +38,8 @@ defmodule Boonorbust.Ledgers do
   end
 
   @spec sell(Trade.t()) :: Multi.t()
+  defp sell(%Trade{from_asset_id: nil}), do: Multi.new()
+
   defp sell(%Trade{id: trade_id, from_asset_id: from_asset_id, from_qty: from_qty}) do
     qty = from_qty |> Decimal.negate()
     latest_ledger = get_latest(from_asset_id)
@@ -87,6 +90,8 @@ defmodule Boonorbust.Ledgers do
   end
 
   @spec buy(Trade.t(), Ledger.t()) :: Multi.t()
+  defp buy(%Trade{to_asset_id: nil}, _sell_asset_latest_ledger), do: Multi.new()
+
   defp buy(
          %Trade{
            id: trade_id,
@@ -96,7 +101,13 @@ defmodule Boonorbust.Ledgers do
          sell_asset_latest_ledger
        ) do
     qty = to_qty
-    total_cost = sell_asset_latest_ledger.total_cost |> Decimal.abs()
+
+    # In the case of dividends we sell nothing to get something hence sell_asset_latest_ledger = nil
+    total_cost =
+      if sell_asset_latest_ledger == nil,
+        do: qty,
+        else: sell_asset_latest_ledger.total_cost |> Decimal.abs()
+
     unit_cost = total_cost |> Decimal.div(qty)
     latest_ledger = get_latest(to_asset_id)
 
