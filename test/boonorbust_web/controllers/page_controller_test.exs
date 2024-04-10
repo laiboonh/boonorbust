@@ -1,8 +1,23 @@
 defmodule BoonorbustWeb.PageControllerTest do
-  use BoonorbustWeb.ConnCase
+  use BoonorbustWeb.ConnCase, async: true
 
-  test "GET /", %{conn: conn} do
+  import Boonorbust.AccountsFixtures
+
+  setup do
+    %{user: user_fixture()}
+  end
+
+  test "GET / with a logged in user", %{conn: conn, user: user} do
+    conn =
+      post(conn, ~p"/users/log_in", %{
+        "user" => %{"email" => user.email, "password" => valid_user_password()}
+      })
+
+    assert get_session(conn, :user_token)
+    assert redirected_to(conn) == ~p"/"
+
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Peace of mind from prototype to production"
+    response = html_response(conn, 200)
+    assert response =~ "Latest Price"
   end
 end

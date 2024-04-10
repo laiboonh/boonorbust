@@ -164,6 +164,15 @@ defmodule Boonorbust.Ledgers do
     |> Repo.all()
   end
 
+  @spec all_latest(integer()) :: [Ledger.t()]
+  def all_latest(user_id) do
+    Ledger
+    |> join(:inner, [l], t in assoc(l, :trade))
+    |> where([l, t], t.user_id == ^user_id and l.latest == true)
+    |> preload(:asset)
+    |> Repo.all()
+  end
+
   @spec delete(integer()) :: {non_neg_integer(), nil | [term()]}
   def delete(user_id) do
     Ledger
