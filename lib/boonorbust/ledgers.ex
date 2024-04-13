@@ -171,6 +171,9 @@ defmodule Boonorbust.Ledgers do
     |> where([l, t], t.user_id == ^user_id and l.latest == true)
     |> preload(:asset)
     |> Repo.all()
+    |> Enum.map(fn ledger ->
+      Map.put(ledger, :latest_price, latest_price(ledger.asset.code))
+    end)
   end
 
   @spec delete(integer()) :: {non_neg_integer(), nil | [term()]}
@@ -180,4 +183,27 @@ defmodule Boonorbust.Ledgers do
     |> where([l, t], t.user_id == ^user_id)
     |> Repo.delete_all()
   end
+
+  defp latest_price("FUND." <> code) do
+    {:ok, %Finch.Response{body: body}} =
+      Finch.build(:get, "https://markets.ft.com/data/funds/tearsheet/summary?s=#{code}:SGD")
+      |> Finch.request(Boonorbust.Finch)
+
+    Floki.parse_document!(body)
+    |> Floki.find(".mod-ui-data-list__value")
+    |> hd()
+    |> Floki.text()
+  end
+
+  defp latest_price("STOCK." <> code) do
+    {:ok, %Finch.Response{body: body}} =
+      Finch.build(:get, "https://www.investingnote.com/stocks/#{code}")
+      |> Finch.request(Boonorbust.Finch)
+
+    Floki.parse_document!(body)
+    |> Floki.find("strong[class*='stock-price']")
+    |> Floki.text()
+  end
+
+  defp latest_price(_code), do: "1"
 end
