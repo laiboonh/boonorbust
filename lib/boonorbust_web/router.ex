@@ -72,6 +72,9 @@ defmodule BoonorbustWeb.Router do
       live "/assets/new", Assets.AssetLive, :new
       live "/assets/:id", Assets.AssetLive, :edit
 
+      live "/tags/new", Tags.TagLive, :new
+      live "/tags/:id", Tags.TagLive, :edit
+
       live "/trades/new", Trades.TradeLive, :new
       live "/trades/:id", Trades.TradeLive, :edit
 
