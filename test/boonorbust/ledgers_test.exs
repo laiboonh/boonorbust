@@ -11,7 +11,7 @@ defmodule Boonorbust.LedgersTest do
       # spend 105 SGD (5 fee inclusive) to get 75 USD
       user = user_fixture()
       assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
-      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id})
+      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
 
       {:ok, trade} =
         Trades.create(%{
@@ -40,7 +40,7 @@ defmodule Boonorbust.LedgersTest do
       # spend 105 SGD (5 fee inclusive) to get 75 USD
       user = user_fixture()
       assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
-      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id})
+      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
 
       {:ok, trade} =
         Trades.create(%{
@@ -78,7 +78,7 @@ defmodule Boonorbust.LedgersTest do
       # spend 105 SGD (5 fee inclusive) to get 75 USD
       user = user_fixture()
       assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
-      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id})
+      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
 
       {:ok, trade} =
         Trades.create(%{
@@ -118,9 +118,9 @@ defmodule Boonorbust.LedgersTest do
     test "sold assets are not returned" do
       user = user_fixture()
       assert {:ok, apple} = Assets.create(%{name: "apple", user_id: user.id})
-      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id})
+      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
 
-      {:ok, trade} =
+      {:ok, _trade} =
         Trades.create(%{
           from_asset_id: sgd.id,
           to_asset_id: apple.id,
@@ -131,9 +131,7 @@ defmodule Boonorbust.LedgersTest do
           user_id: user.id
         })
 
-      {:ok, _result} = Ledgers.record(trade)
-
-      {:ok, trade} =
+      {:ok, _trade} =
         Trades.create(%{
           from_asset_id: apple.id,
           to_asset_id: sgd.id,
@@ -144,12 +142,15 @@ defmodule Boonorbust.LedgersTest do
           user_id: user.id
         })
 
-      {:ok, _result} = Ledgers.record(trade)
+      :ok = Ledgers.recalculate(user.id)
 
-      [ledger] = Ledgers.all_latest(user.id)
+      [sgd_latest_ledger] = Ledgers.all_latest(user.id)
 
-      assert ledger.asset_id == sgd.id
-      assert ledger.inventory_qty == Decimal.new(-105 + 200)
+      assert sgd_latest_ledger.asset_id == sgd.id
+
+      assert sgd_latest_ledger.inventory_cost == Decimal.new("95")
+      assert sgd_latest_ledger.weighted_average_cost == Decimal.new("1")
+      assert sgd_latest_ledger.inventory_qty == Decimal.new("95")
     end
   end
 end

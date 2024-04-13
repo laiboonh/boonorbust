@@ -38,4 +38,11 @@ defmodule Boonorbust.Assets do
     get(id, user_id)
     |> Repo.delete()
   end
+
+  @spec root(integer()) :: Asset.t() | nil
+  def root(user_id) do
+    Asset
+    |> where([a], a.user_id == ^user_id and a.root == true)
+    |> Repo.one()
+  end
 end

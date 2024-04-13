@@ -16,6 +16,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
         <.simple_form for={@asset_form} id="asset_form" phx-submit={@action}>
           <.input field={@asset_form[:name]} label="Name" required />
           <.input field={@asset_form[:code]} label="Code" />
+          <.input field={@asset_form[:root]} label="Root" type="checkbox" />
           <.input field={@asset_form[:user_id]} label="User ID" required readonly />
           <:actions>
             <.button phx-disable-with="..."><%= @action |> String.capitalize() %></.button>
@@ -29,6 +30,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
         <:col :let={asset} label="Id"><%= asset.id %></:col>
         <:col :let={asset} label="Name"><%= asset.name %></:col>
         <:col :let={asset} label="Code"><%= asset.code %></:col>
+        <:col :let={asset} label="Root"><%= asset.root %></:col>
         <:col :let={asset} label="Action">
           <.link patch={~p"/assets/#{asset.id}"}><.icon name="hero-pencil-square-solid" /></.link>
           <.link patch={~p"/assets/new"}><.icon name="hero-document-plus-solid" /></.link>
@@ -105,10 +107,10 @@ defmodule BoonorbustWeb.Assets.AssetLive do
   end
 
   def handle_event("insert", params, socket) do
-    %{"asset" => %{"name" => name, "code" => code, "user_id" => user_id}} = params
+    %{"asset" => %{"name" => name, "code" => code, "root" => root, "user_id" => user_id}} = params
 
     socket =
-      case Assets.create(%{name: name, code: code, user_id: user_id}) do
+      case Assets.create(%{name: name, code: code, root: root, user_id: user_id}) do
         {:ok, asset} ->
           socket
           |> assign(:assets, Assets.all(user_id))
@@ -128,10 +130,10 @@ defmodule BoonorbustWeb.Assets.AssetLive do
     user_id = socket.assigns.current_user.id
     %{hidden: [id: id]} = socket.assigns.asset_form
 
-    %{"asset" => %{"name" => name, "code" => code}} = params
+    %{"asset" => %{"name" => name, "code" => code, "root" => root}} = params
 
     socket =
-      case Assets.update(id, user_id, %{name: name, code: code}) do
+      case Assets.update(id, user_id, %{name: name, code: code, root: root}) do
         {:ok, asset} ->
           info = "Asset #{asset.name} Updated"
 

@@ -1,6 +1,7 @@
 defmodule Boonorbust.Ledgers do
   import Ecto.Query, warn: false
 
+  alias Boonorbust.Assets
   alias Boonorbust.Ledgers.Ledger
   alias Boonorbust.Repo
   alias Boonorbust.Trades
@@ -96,15 +97,19 @@ defmodule Boonorbust.Ledgers do
          %Trade{
            id: trade_id,
            to_qty: to_qty,
-           to_asset_id: to_asset_id
+           to_asset_id: to_asset_id,
+           user_id: user_id
          },
          sell_asset_latest_ledger
        ) do
     qty = to_qty
 
     # In the case of dividends we sell nothing to get something hence sell_asset_latest_ledger = nil
+    # In the case of sell asset to root asset (SGD)
+    root_asset = Assets.root(user_id)
+
     total_cost =
-      if sell_asset_latest_ledger == nil,
+      if sell_asset_latest_ledger == nil or root_asset.id == to_asset_id,
         do: qty,
         else: sell_asset_latest_ledger.total_cost |> Decimal.abs()
 
@@ -166,13 +171,15 @@ defmodule Boonorbust.Ledgers do
 
   @spec all_latest(integer()) :: [Ledger.t()]
   def all_latest(user_id) do
+    root_asset = Assets.root(user_id)
+
     Ledger
     |> join(:inner, [l], t in assoc(l, :trade))
     |> where([l, t], t.user_id == ^user_id and l.latest == true and l.inventory_qty != 0)
     |> preload(:asset)
     |> Repo.all()
     |> Enum.map(fn ledger ->
-      Map.put(ledger, :latest_price, latest_price(ledger.asset.code))
+      Map.put(ledger, :latest_price, latest_price(root_asset, ledger.asset.code))
     end)
   end
 
@@ -184,7 +191,8 @@ defmodule Boonorbust.Ledgers do
     |> Repo.delete_all()
   end
 
-  defp latest_price("FUND." <> code) do
+  @spec latest_price(Asset.t(), binary()) :: binary()
+  defp latest_price(_root_asset, "FUND." <> code) do
     {:ok, %Finch.Response{body: body}} =
       Finch.build(:get, "https://markets.ft.com/data/funds/tearsheet/summary?s=#{code}:SGD")
       |> Finch.request(Boonorbust.Finch)
@@ -195,7 +203,7 @@ defmodule Boonorbust.Ledgers do
     |> Floki.text()
   end
 
-  defp latest_price("STOCK." <> code) do
+  defp latest_price(_root_asset, "STOCK." <> code) do
     {:ok, %Finch.Response{body: body}} =
       Finch.build(:get, "https://www.investingnote.com/stocks/#{code}")
       |> Finch.request(Boonorbust.Finch)
@@ -205,17 +213,17 @@ defmodule Boonorbust.Ledgers do
     |> Floki.text()
   end
 
-  defp latest_price("TOKEN." <> code) do
+  defp latest_price(root_asset, "TOKEN." <> code) do
     {:ok, %Finch.Response{body: body}} =
       Finch.build(
         :get,
-        "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=#{code}&convert=SGD",
+        "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=#{code}&convert=#{root_asset.code}",
         [{"X-CMC_PRO_API_KEY", "b0b87191-9b14-434e-b0a8-bee99fed3b40"}]
       )
       |> Finch.request(Boonorbust.Finch)
 
-    Jason.decode!(body)["data"][code]["quote"]["SGD"]["price"]
+    Jason.decode!(body)["data"][code]["quote"][root_asset.code]["price"]
   end
 
-  defp latest_price(_code), do: "1"
+  defp latest_price(_root_asset, _code), do: "1"
 end
