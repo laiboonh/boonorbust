@@ -2,6 +2,7 @@ defmodule Boonorbust.Ledgers do
   import Ecto.Query, warn: false
 
   alias Boonorbust.Assets
+  alias Boonorbust.Assets.Asset
   alias Boonorbust.Ledgers.Ledger
   alias Boonorbust.Repo
   alias Boonorbust.Trades
