@@ -113,4 +113,43 @@ defmodule Boonorbust.LedgersTest do
       assert result.insert_buy_asset_latest_ledger.weighted_average_cost == Decimal.new(1)
     end
   end
+
+  describe "all_latest" do
+    test "sold assets are not returned" do
+      user = user_fixture()
+      assert {:ok, apple} = Assets.create(%{name: "apple", user_id: user.id})
+      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id})
+
+      {:ok, trade} =
+        Trades.create(%{
+          from_asset_id: sgd.id,
+          to_asset_id: apple.id,
+          from_qty: 105,
+          to_qty: 75,
+          to_asset_unit_cost: 1.4,
+          transacted_at: Date.utc_today(),
+          user_id: user.id
+        })
+
+      {:ok, _result} = Ledgers.record(trade)
+
+      {:ok, trade} =
+        Trades.create(%{
+          from_asset_id: apple.id,
+          to_asset_id: sgd.id,
+          from_qty: 75,
+          to_qty: 200,
+          to_asset_unit_cost: 2.5,
+          transacted_at: Date.utc_today(),
+          user_id: user.id
+        })
+
+      {:ok, _result} = Ledgers.record(trade)
+
+      [ledger] = Ledgers.all_latest(user.id)
+
+      assert ledger.asset_id == sgd.id
+      assert ledger.inventory_qty == Decimal.new(-105 + 200)
+    end
+  end
 end

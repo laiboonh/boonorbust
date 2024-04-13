@@ -168,7 +168,7 @@ defmodule Boonorbust.Ledgers do
   def all_latest(user_id) do
     Ledger
     |> join(:inner, [l], t in assoc(l, :trade))
-    |> where([l, t], t.user_id == ^user_id and l.latest == true)
+    |> where([l, t], t.user_id == ^user_id and l.latest == true and l.inventory_qty != 0)
     |> preload(:asset)
     |> Repo.all()
     |> Enum.map(fn ledger ->
@@ -203,6 +203,18 @@ defmodule Boonorbust.Ledgers do
     Floki.parse_document!(body)
     |> Floki.find("strong[class*='stock-price']")
     |> Floki.text()
+  end
+
+  defp latest_price("TOKEN." <> code) do
+    {:ok, %Finch.Response{body: body}} =
+      Finch.build(
+        :get,
+        "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=#{code}&convert=SGD",
+        [{"X-CMC_PRO_API_KEY", "b0b87191-9b14-434e-b0a8-bee99fed3b40"}]
+      )
+      |> Finch.request(Boonorbust.Finch)
+
+    Jason.decode!(body)["data"][code]["quote"]["SGD"]["price"]
   end
 
   defp latest_price(_code), do: "1"
