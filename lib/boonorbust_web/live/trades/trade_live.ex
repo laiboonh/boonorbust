@@ -36,6 +36,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
             step="0.00001"
           />
           <.input field={@trade_form[:transacted_at]} label="Transacted At" type="date" required />
+          <.input field={@trade_form[:note]} label="Note" />
           <:actions>
             <.button phx-disable-with="..."><%= @action |> String.capitalize() %></.button>
           </:actions>
@@ -56,6 +57,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
         <:col :let={trade} label="To Quantity"><%= trade.to_qty %></:col>
         <:col :let={trade} label="To Asset Unit Cost"><%= trade.to_asset_unit_cost %></:col>
         <:col :let={trade} label="Transacted At"><%= trade.transacted_at %></:col>
+        <:col :let={trade} label="Note"><%= trade.note %></:col>
         <:col :let={trade} label="Action">
           <.link patch={~p"/trades/#{trade.id}"}><.icon name="hero-pencil-square-solid" /></.link>
           <.link patch={~p"/trades/new"}><.icon name="hero-document-plus-solid" /></.link>
@@ -156,7 +158,8 @@ defmodule BoonorbustWeb.Trades.TradeLive do
         "to_qty" => to_qty,
         "user_id" => user_id,
         "to_asset_unit_cost" => to_asset_unit_cost,
-        "transacted_at" => transacted_at
+        "transacted_at" => transacted_at,
+        "note" => note
       }
     } = params
 
@@ -168,7 +171,8 @@ defmodule BoonorbustWeb.Trades.TradeLive do
              to_qty: to_qty,
              user_id: user_id,
              to_asset_unit_cost: to_asset_unit_cost,
-             transacted_at: transacted_at
+             transacted_at: transacted_at,
+             note: note
            }) do
         {:ok, trade} ->
           socket
@@ -196,7 +200,8 @@ defmodule BoonorbustWeb.Trades.TradeLive do
         "to_qty" => to_qty,
         "user_id" => user_id,
         "to_asset_unit_cost" => to_asset_unit_cost,
-        "transacted_at" => transacted_at
+        "transacted_at" => transacted_at,
+        "note" => note
       }
     } = params
 
@@ -208,7 +213,8 @@ defmodule BoonorbustWeb.Trades.TradeLive do
              to_qty: to_qty,
              user_id: user_id,
              to_asset_unit_cost: to_asset_unit_cost,
-             transacted_at: transacted_at
+             transacted_at: transacted_at,
+             note: note
            }) do
         {:ok, trade} ->
           info = "Trade #{trade.id} Updated"

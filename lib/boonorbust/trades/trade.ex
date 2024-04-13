@@ -11,6 +11,7 @@ defmodule Boonorbust.Trades.Trade do
     field :to_qty, :decimal
     field :to_asset_unit_cost, :decimal
     field :transacted_at, :date
+    field :note, :string
     belongs_to :user, Boonorbust.Accounts.User
     timestamps(type: :utc_datetime)
   end
@@ -24,6 +25,7 @@ defmodule Boonorbust.Trades.Trade do
       :to_qty,
       :to_asset_unit_cost,
       :transacted_at,
+      :note,
       :user_id
     ])
     |> validate_required([
