@@ -117,8 +117,8 @@ defmodule Boonorbust.LedgersTest do
   describe "all_latest" do
     test "sold assets are not returned" do
       user = user_fixture()
-      assert {:ok, apple} = Assets.create(%{name: "apple", user_id: user.id})
-      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
+      assert {:ok, apple} = Assets.create(%{name: "apple", user_id: user.id, code: "apple"})
+      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true, code: "sgd"})
 
       {:ok, _trade} =
         Trades.create(%{

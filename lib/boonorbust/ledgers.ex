@@ -175,6 +175,8 @@ defmodule Boonorbust.Ledgers do
   @spec all_latest(integer()) :: [Ledger.t()]
   def all_latest(user_id) do
     root_asset = Assets.root(user_id)
+    usdsgd = exchange_rate("usdsgd")
+    hkdsgd = exchange_rate("hkdsgd")
 
     Ledger
     |> join(:inner, [l], t in assoc(l, :trade))
@@ -183,6 +185,19 @@ defmodule Boonorbust.Ledgers do
     |> Repo.all()
     |> Enum.map(fn ledger ->
       latest_price = latest_price(root_asset, ledger.asset.code)
+
+      latest_price =
+        cond do
+          ledger.asset.code |> String.contains?("NYSE") or
+              ledger.asset.code |> String.contains?("NASDAQ") ->
+            latest_price |> Decimal.mult(usdsgd)
+
+          ledger.asset.code |> String.contains?("HKEX") ->
+            latest_price |> Decimal.mult(hkdsgd)
+
+          true ->
+            latest_price
+        end
 
       ledger
       |> Map.put(:latest_price, latest_price)
@@ -198,7 +213,23 @@ defmodule Boonorbust.Ledgers do
     |> Repo.delete_all()
   end
 
-  @spec latest_price(Asset.t(), binary()) :: binary()
+  @spec exchange_rate(binary()) :: Decimal.t()
+  def exchange_rate(currency_pair) do
+    {:ok, %Finch.Response{body: body}} =
+      Finch.build(
+        :get,
+        "https://markets.ft.com/data/currencies/tearsheet/summary?s=#{currency_pair}"
+      )
+      |> Finch.request(Boonorbust.Finch)
+
+    Floki.parse_document!(body)
+    |> Floki.find(".mod-ui-data-list__value")
+    |> hd()
+    |> Floki.text()
+    |> Decimal.new()
+  end
+
+  @spec latest_price(Asset.t(), binary()) :: Decimal.t()
   defp latest_price(_root_asset, "FUND." <> code) do
     {:ok, %Finch.Response{body: body}} =
       Finch.build(:get, "https://markets.ft.com/data/funds/tearsheet/summary?s=#{code}:SGD")
@@ -208,6 +239,7 @@ defmodule Boonorbust.Ledgers do
     |> Floki.find(".mod-ui-data-list__value")
     |> hd()
     |> Floki.text()
+    |> Decimal.new()
   end
 
   defp latest_price(_root_asset, "STOCK." <> code) do
@@ -218,6 +250,7 @@ defmodule Boonorbust.Ledgers do
     Floki.parse_document!(body)
     |> Floki.find("strong[class*='stock-price']")
     |> Floki.text()
+    |> Decimal.new()
   end
 
   defp latest_price(root_asset, "TOKEN." <> code) do
@@ -230,9 +263,10 @@ defmodule Boonorbust.Ledgers do
       |> Finch.request(Boonorbust.Finch)
 
     "#{Jason.decode!(body)["data"][code]["quote"][root_asset.code]["price"]}"
+    |> Decimal.new()
   end
 
-  defp latest_price(_root_asset, _code), do: "1"
+  defp latest_price(_root_asset, _code), do: "1" |> Decimal.new()
 
   @spec pnl(list(Ledger.t())) :: Decimal.t()
   def pnl(latest_ledgers) do
