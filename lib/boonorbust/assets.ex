@@ -15,6 +15,7 @@ defmodule Boonorbust.Assets do
   def get(id, user_id) do
     Asset
     |> where([a], a.id == ^id and a.user_id == ^user_id)
+    |> preload([a], :tags)
     |> Repo.one()
   end
 
@@ -29,6 +30,7 @@ defmodule Boonorbust.Assets do
   def all(user_id) do
     Asset
     |> where([a], a.user_id == ^user_id)
+    |> preload([a], :tags)
     |> order_by(desc: :inserted_at)
     |> Repo.all()
   end

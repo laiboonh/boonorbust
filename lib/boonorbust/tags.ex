@@ -38,4 +38,9 @@ defmodule Boonorbust.Tags do
     get(id, user_id)
     |> Repo.delete()
   end
+
+  @spec get_by_ids(list(integer())) :: list(Tag.t())
+  def get_by_ids(ids) do
+    Repo.all(from t in Tag, where: t.id in ^ids)
+  end
 end

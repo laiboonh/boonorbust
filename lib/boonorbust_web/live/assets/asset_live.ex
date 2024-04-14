@@ -17,6 +17,14 @@ defmodule BoonorbustWeb.Assets.AssetLive do
           <.input field={@asset_form[:name]} label="Name" required />
           <.input field={@asset_form[:code]} label="Code" />
           <.input field={@asset_form[:root]} label="Root" type="checkbox" />
+          <.input
+            field={@asset_form[:tag_ids]}
+            label="Tags"
+            type="select"
+            options={@tag_options}
+            value={@selected_tag_values}
+            multiple
+          />
           <.input field={@asset_form[:user_id]} label="User ID" required readonly />
           <:actions>
             <.button phx-disable-with="..."><%= @action |> String.capitalize() %></.button>
@@ -31,6 +39,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
         <:col :let={asset} label="Name"><%= asset.name %></:col>
         <:col :let={asset} label="Code"><%= asset.code %></:col>
         <:col :let={asset} label="Root"><%= asset.root %></:col>
+        <:col :let={asset} label="Tags"><%= tags(asset.tags) %></:col>
         <:col :let={asset} label="Action">
           <.link patch={~p"/assets/#{asset.id}"}><.icon name="hero-pencil-square-solid" /></.link>
           <.link patch={~p"/assets/new"}><.icon name="hero-document-plus-solid" /></.link>
@@ -39,6 +48,14 @@ defmodule BoonorbustWeb.Assets.AssetLive do
       </.table>
     <% end %>
     """
+  end
+
+  def tag_options(user_id) do
+    Boonorbust.Tags.all(user_id) |> Enum.map(fn tag -> {tag.name, tag.id} end)
+  end
+
+  def tags(tags) do
+    tags |> Enum.map_join(",", & &1.name)
   end
 
   def mount(%{"id" => id}, _session, socket) do
@@ -61,6 +78,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
           socket
           |> assign(:assets, Assets.all(user_id))
           |> assign(:action, "update")
+          |> assign(:tag_options, tag_options(user_id))
           |> assign(:asset_form, to_form(asset_changeset))
       end
 
@@ -76,6 +94,8 @@ defmodule BoonorbustWeb.Assets.AssetLive do
       socket
       |> assign(:assets, Assets.all(user_id))
       |> assign(:action, "insert")
+      |> assign(:tag_options, tag_options(user_id))
+      |> assign(:selected_tag_values, [])
       |> assign(:asset_form, to_form(asset_changeset))
 
     {:ok, socket}
@@ -89,6 +109,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
     socket =
       socket
       |> assign(:assets, Assets.all(user_id))
+      |> assign(:selected_tag_values, asset.tags |> Enum.map(& &1.id))
       |> assign(:action, "update")
       |> assign(:asset_form, to_form(asset_changeset))
 
@@ -107,10 +128,24 @@ defmodule BoonorbustWeb.Assets.AssetLive do
   end
 
   def handle_event("insert", params, socket) do
-    %{"asset" => %{"name" => name, "code" => code, "root" => root, "user_id" => user_id}} = params
+    %{
+      "asset" => %{
+        "name" => name,
+        "code" => code,
+        "root" => root,
+        "user_id" => user_id
+      }
+    } =
+      params
 
     socket =
-      case Assets.create(%{name: name, code: code, root: root, user_id: user_id}) do
+      case Assets.create(%{
+             name: name,
+             code: code,
+             root: root,
+             user_id: user_id,
+             tag_ids: Map.get(params["asset"], "tag_ids", []) |> Enum.map(&String.to_integer(&1))
+           }) do
         {:ok, asset} ->
           socket
           |> assign(:assets, Assets.all(user_id))
@@ -133,7 +168,12 @@ defmodule BoonorbustWeb.Assets.AssetLive do
     %{"asset" => %{"name" => name, "code" => code, "root" => root}} = params
 
     socket =
-      case Assets.update(id, user_id, %{name: name, code: code, root: root}) do
+      case Assets.update(id, user_id, %{
+             name: name,
+             code: code,
+             root: root,
+             tag_ids: Map.get(params["asset"], "tag_ids", []) |> Enum.map(&String.to_integer(&1))
+           }) do
         {:ok, asset} ->
           info = "Asset #{asset.name} Updated"
 
