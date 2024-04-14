@@ -122,6 +122,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
     socket =
       socket
       |> assign(:action, "insert")
+      |> assign(:selected_tag_values, [])
       |> assign(:asset_form, to_form(Asset.changeset(%Asset{}, %{user_id: user_id})))
 
     {:noreply, socket}
