@@ -1,5 +1,23 @@
 <.flash_group flash={@flash} />
 
+<%= if @pnl do %>
+  <%= if @pnl |> Decimal.positive?() do %>
+    <p class="text-green-700 text-2xl underline decoration-double text-right"><%= @pnl %></p>
+  <% else %>
+    <p class="text-red-700 text-2xl underline decoration-double text-right"><%= @pnl %></p>
+  <% end %>
+<% end %>
+
+<%= if @portfolios do %>
+  <%= for portfolio <- @portfolios do %>
+    <.table id={portfolio.name} rows={portfolio.tag_values} caption={portfolio.name}>
+      <:col :let={tag_value} label="Tag"><%= tag_value.name %></:col>
+      <:col :let={tag_value} label="Value"><%= tag_value.value %></:col>
+      <:col :let={tag_value} label="%"><%= tag_value.percentage %>%</:col>
+    </.table>
+  <% end %>
+<% end %>
+
 <%= if @latest_ledgers do %>
   <.table id="ledgers" rows={@latest_ledgers}>
     <:col :let={ledger} label="Id"><%= ledger.id %></:col>
@@ -9,5 +27,6 @@
     <:col :let={ledger} label="Weighted Avg Cost"><%= ledger.weighted_average_cost %></:col>
     <:col :let={ledger} label="Inventory Cost"><%= ledger.inventory_cost %></:col>
     <:col :let={ledger} label="Latest Price"><%= ledger.latest_price %></:col>
+    <:col :let={ledger} label="Latest Value"><%= ledger.latest_value %></:col>
   </.table>
 <% end %>

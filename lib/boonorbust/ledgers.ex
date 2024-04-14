@@ -4,6 +4,8 @@ defmodule Boonorbust.Ledgers do
   alias Boonorbust.Assets
   alias Boonorbust.Assets.Asset
   alias Boonorbust.Ledgers.Ledger
+  alias Boonorbust.Portfolios
+  alias Boonorbust.Portfolios.Portfolio
   alias Boonorbust.Repo
   alias Boonorbust.Trades
   alias Boonorbust.Trades.Trade
@@ -180,7 +182,11 @@ defmodule Boonorbust.Ledgers do
     |> preload(:asset)
     |> Repo.all()
     |> Enum.map(fn ledger ->
-      Map.put(ledger, :latest_price, latest_price(root_asset, ledger.asset.code))
+      latest_price = latest_price(root_asset, ledger.asset.code)
+
+      ledger
+      |> Map.put(:latest_price, latest_price)
+      |> Map.put(:latest_value, Decimal.new(latest_price) |> Decimal.mult(ledger.inventory_qty))
     end)
   end
 
@@ -223,8 +229,57 @@ defmodule Boonorbust.Ledgers do
       )
       |> Finch.request(Boonorbust.Finch)
 
-    Jason.decode!(body)["data"][code]["quote"][root_asset.code]["price"]
+    "#{Jason.decode!(body)["data"][code]["quote"][root_asset.code]["price"]}"
   end
 
   defp latest_price(_root_asset, _code), do: "1"
+
+  @spec pnl(list(Ledger.t())) :: Decimal.t()
+  def pnl(latest_ledgers) do
+    latest_ledgers
+    |> Enum.reduce(Decimal.new(0), fn l, acc -> acc |> Decimal.add(l.latest_value) end)
+  end
+
+  @spec portfolios(integer(), list(Ledger.t())) :: list(map())
+  def portfolios(user_id, latest_ledgers) do
+    portfolios = Portfolios.all(user_id)
+
+    Enum.map(portfolios, fn portfolio ->
+      tag_values = calculate_portfolio_tag_values(portfolio, latest_ledgers) |> add_percentage()
+      %{name: portfolio.name, tag_values: tag_values}
+    end)
+  end
+
+  defp add_percentage(tag_values) do
+    total_value =
+      Enum.reduce(tag_values, Decimal.new(0), fn %{value: value}, acc ->
+        acc |> Decimal.add(value)
+      end)
+
+    tag_values
+    |> Enum.map(fn tag_value ->
+      percentage =
+        tag_value.value
+        |> Decimal.div(total_value)
+        |> Decimal.mult(Decimal.new(100))
+        |> Decimal.round(2)
+
+      tag_value |> Map.put_new(:percentage, percentage)
+    end)
+  end
+
+  @spec calculate_portfolio_tag_values(Portfolio.t(), list(Ledger.t())) :: list(map())
+  defp calculate_portfolio_tag_values(portfolio, latest_ledgers) do
+    portfolio.tags
+    |> Enum.map(fn tag ->
+      asset_ids = tag.assets |> Enum.map(& &1.id)
+      relevant_ledgers = latest_ledgers |> Enum.filter(fn l -> l.asset_id in asset_ids end)
+
+      tag_value =
+        relevant_ledgers
+        |> Enum.reduce(Decimal.new(0), fn l, acc -> acc |> Decimal.add(l.latest_value) end)
+
+      %{name: tag.name, value: tag_value}
+    end)
+  end
 end

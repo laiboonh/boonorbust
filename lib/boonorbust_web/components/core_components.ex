@@ -458,6 +458,7 @@ defmodule BoonorbustWeb.CoreComponents do
   attr :rows, :list, required: true
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
+  attr :caption, :string, default: nil
 
   attr :row_item, :any,
     default: &Function.identity/1,
@@ -478,6 +479,7 @@ defmodule BoonorbustWeb.CoreComponents do
     ~H"""
     <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
       <table class="w-[40rem] mt-11 sm:w-full">
+        <caption class="caption-top underline decoration-solid text-lg"><%= @caption %></caption>
         <thead class="text-sm text-left leading-6 text-zinc-500">
           <tr>
             <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal"><%= col[:label] %></th>

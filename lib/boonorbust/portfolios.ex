@@ -30,7 +30,7 @@ defmodule Boonorbust.Portfolios do
   def all(user_id) do
     Portfolio
     |> where([a], a.user_id == ^user_id)
-    |> preload([a], :tags)
+    |> preload([a], tags: :assets)
     |> Repo.all()
   end
 

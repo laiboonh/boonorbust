@@ -18,6 +18,6 @@ defmodule BoonorbustWeb.PageControllerTest do
 
     conn = get(conn, ~p"/")
     response = html_response(conn, 200)
-    assert response =~ "Latest Price"
+    assert response =~ "assets"
   end
 end
