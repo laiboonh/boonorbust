@@ -30,8 +30,16 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
+  cacert = System.get_env("SSL_CERT")
+  pem_entries = :public_key.pem_decode(cacert)
+  cacerts = for {:Certificate, cert, :not_encrypted} <- pem_entries, do: cert
+
   config :boonorbust, Boonorbust.Repo,
-    # ssl: true,
+    ssl: true,
+    ssl_opts: [
+      verify: :verify_peer,
+      cacerts: cacerts
+    ],
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
