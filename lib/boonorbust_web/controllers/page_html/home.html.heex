@@ -1,10 +1,10 @@
 <.flash_group flash={@flash} />
 
-<%= if @pnl do %>
-  <%= if @pnl |> Decimal.positive?() do %>
-    <p class="text-green-700 text-2xl underline decoration-double text-right"><%= @pnl %></p>
+<%= if @profit do %>
+  <%= if @profit |> Decimal.positive?() do %>
+    <p class="text-green-700 text-2xl underline decoration-double text-right"><%= @profit %></p>
   <% else %>
-    <p class="text-red-700 text-2xl underline decoration-double text-right"><%= @pnl %></p>
+    <p class="text-red-700 text-2xl underline decoration-double text-right"><%= @profit %></p>
   <% end %>
 <% end %>
 

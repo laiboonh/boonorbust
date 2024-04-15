@@ -8,6 +8,10 @@ defmodule Boonorbust.Accounts do
 
   alias Boonorbust.Accounts.{User, UserNotifier, UserToken}
 
+  def all do
+    Repo.all(User)
+  end
+
   ## Database getters
 
   @doc """

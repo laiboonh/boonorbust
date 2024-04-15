@@ -268,8 +268,8 @@ defmodule Boonorbust.Ledgers do
 
   defp latest_price(_root_asset, _code), do: "1" |> Decimal.new()
 
-  @spec pnl(list(Ledger.t())) :: Decimal.t()
-  def pnl(latest_ledgers) do
+  @spec profit(list(Ledger.t())) :: Decimal.t()
+  def profit(latest_ledgers) do
     latest_ledgers
     |> Enum.reduce(Decimal.new(0), fn l, acc -> acc |> Decimal.add(l.latest_value) end)
   end
