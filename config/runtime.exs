@@ -30,7 +30,7 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
-  cacert = System.get_env("SSL_CERT")
+  cacert = System.get_env("SSL_CERT") |> String.replace("\\n", "\n")
   pem_entries = :public_key.pem_decode(cacert)
   cacerts = for {:Certificate, cert, :not_encrypted} <- pem_entries, do: cert
 
