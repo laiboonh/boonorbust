@@ -190,7 +190,8 @@ defmodule Boonorbust.Ledgers do
       latest_price =
         cond do
           ledger.asset.code |> String.contains?("NYSE") or
-              ledger.asset.code |> String.contains?("NASDAQ") ->
+            ledger.asset.code |> String.contains?("NASDAQ") or
+              ledger.asset.code |> String.contains?("SGX:H78") ->
             latest_price |> Decimal.mult(usdsgd)
 
           ledger.asset.code |> String.contains?("HKEX") ->
