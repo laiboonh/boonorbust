@@ -12,7 +12,8 @@ defmodule BoonorbustWeb.PageController do
         render(conn, :home, latest_ledgers: nil, profit_percent: nil, portfolios: nil)
 
       current_user ->
-        all_latest = Ledgers.all_latest(current_user.id)
+        all_latest =
+          Ledgers.all_latest(current_user.id) |> Enum.sort_by(& &1.profit_percent, :desc)
 
         render(conn, :home,
           latest_ledgers: all_latest,
