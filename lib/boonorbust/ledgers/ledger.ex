@@ -15,6 +15,10 @@ defmodule Boonorbust.Ledgers.Ledger do
 
     belongs_to :trade, Boonorbust.Trades.Trade
     belongs_to :asset, Boonorbust.Assets.Asset
+
+    field :latest_price, :decimal, virtual: true
+    field :latest_value, :decimal, virtual: true
+    field :profit_percent, :decimal, virtual: true
   end
 
   def changeset(ledger, attrs) do
