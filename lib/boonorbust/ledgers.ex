@@ -6,6 +6,7 @@ defmodule Boonorbust.Ledgers do
   alias Boonorbust.Ledgers.Ledger
   alias Boonorbust.Portfolios
   alias Boonorbust.Portfolios.Portfolio
+  alias Boonorbust.Profits
   alias Boonorbust.Repo
   alias Boonorbust.Trades
   alias Boonorbust.Trades.Trade
@@ -268,10 +269,15 @@ defmodule Boonorbust.Ledgers do
 
   defp latest_price(_root_asset, _code), do: "1" |> Decimal.new()
 
-  @spec profit(list(Ledger.t())) :: Decimal.t()
-  def profit(latest_ledgers) do
-    latest_ledgers
-    |> Enum.reduce(Decimal.new(0), fn l, acc -> acc |> Decimal.add(l.latest_value) end)
+  @spec profit(integer(), list(Ledger.t())) :: Decimal.t()
+  def profit(user_id, latest_ledgers) do
+    profit_value =
+      latest_ledgers
+      |> Enum.reduce(Decimal.new(0), fn l, acc -> acc |> Decimal.add(l.latest_value) end)
+
+    _profit = Profits.upsert(Date.utc_today(), profit_value, user_id)
+
+    profit_value
   end
 
   @spec portfolios(integer(), list(Ledger.t())) :: list(map())

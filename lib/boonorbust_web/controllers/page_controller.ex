@@ -16,7 +16,7 @@ defmodule BoonorbustWeb.PageController do
 
         render(conn, :home,
           latest_ledgers: all_latest,
-          profit: Ledgers.profit(all_latest),
+          profit: Ledgers.profit(current_user.id, all_latest),
           portfolios: Ledgers.portfolios(current_user.id, all_latest)
         )
     end
