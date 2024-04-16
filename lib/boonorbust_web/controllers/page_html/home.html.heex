@@ -2,9 +2,13 @@
 
 <%= if @profit_percent do %>
   <%= if @profit_percent |> Decimal.positive?() do %>
-    <p class="text-green-700 text-2xl underline decoration-double text-right"><%= @profit_percent %>%</p>
+    <p class="text-green-700 text-2xl underline decoration-double text-right">
+      <%= @profit_percent %>%
+    </p>
   <% else %>
-    <p class="text-red-700 text-2xl underline decoration-double text-right"><%= @profit_percent %>%</p>
+    <p class="text-red-700 text-2xl underline decoration-double text-right">
+      <%= @profit_percent %>%
+    </p>
   <% end %>
 <% end %>
 
