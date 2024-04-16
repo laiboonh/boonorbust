@@ -10,7 +10,7 @@ kill_signal = 'SIGTERM'
 [build]
 
 [deploy]
-  release_command = '/app/bin/rollback'
+  release_command = '/app/bin/migrate'
 
 [env]
   PHX_HOST = 'boonorbust.fly.dev'

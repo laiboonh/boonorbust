@@ -66,8 +66,7 @@ defmodule Boonorbust.MixProject do
       {:bandit, "~> 1.2"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:decimal, "~> 2.0"},
-      {:oban, "~> 2.17"}
+      {:decimal, "~> 2.0"}
     ]
   end
 

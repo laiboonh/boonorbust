@@ -7,12 +7,9 @@ defmodule Boonorbust.Application do
 
   @impl true
   def start(_type, _args) do
-    Oban.Telemetry.attach_default_logger()
-
     children = [
       BoonorbustWeb.Telemetry,
       Boonorbust.Repo,
-      {Oban, Application.fetch_env!(:boonorbust, Oban)},
       {DNSCluster, query: Application.get_env(:boonorbust, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Boonorbust.PubSub},
       # Start the Finch HTTP client for sending emails
