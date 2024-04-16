@@ -62,7 +62,6 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 
 config :boonorbust, Oban,
-  peer: false,
   engine: Oban.Engines.Basic,
   queues: [default: 10],
   repo: Boonorbust.Repo,
@@ -70,7 +69,7 @@ config :boonorbust, Oban,
     {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7},
     {Oban.Plugins.Cron,
      crontab: [
-       {"* * * * *", Boonorbust.Ledgers.Worker}
+       {"0 0 * * *", Boonorbust.Ledgers.Worker}
      ]}
   ]
 
