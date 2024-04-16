@@ -61,7 +61,7 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :boonorbust, Oban,
+config :boonorbust, Oban, peer: false,
   engine: Oban.Engines.Basic,
   queues: [default: 10],
   repo: Boonorbust.Repo,
