@@ -8,13 +8,17 @@ defmodule Boonorbust.ProfitsTest do
     test "creating profit" do
       user = user_fixture()
 
-      assert profit = Profits.upsert(Date.utc_today(), Decimal.new(-123), user.id)
+      profit = Profits.upsert(Date.utc_today(), Decimal.new(-123), user.id)
 
       assert Profits.all(user.id) == [profit]
 
-      assert profit = Profits.upsert(Date.utc_today(), Decimal.new(123), user.id)
+      profit = Profits.upsert(Date.utc_today(), Decimal.new(123), user.id)
 
       assert Profits.all(user.id) == [profit]
+
+      tomorrow_profit = Profits.upsert(Date.utc_today() |> Date.add(1), Decimal.new(123), user.id)
+
+      assert Profits.all(user.id) == [profit, tomorrow_profit]
     end
   end
 end

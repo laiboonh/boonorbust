@@ -200,9 +200,19 @@ defmodule Boonorbust.Ledgers do
             latest_price
         end
 
+      latest_value = Decimal.new(latest_price) |> Decimal.mult(ledger.inventory_qty)
+
+      profit_percent =
+        latest_value
+        |> Decimal.sub(ledger.inventory_cost)
+        |> Decimal.div(ledger.inventory_cost)
+        |> Decimal.mult(Decimal.new(100))
+        |> Decimal.round(2)
+
       ledger
       |> Map.put(:latest_price, latest_price)
-      |> Map.put(:latest_value, Decimal.new(latest_price) |> Decimal.mult(ledger.inventory_qty))
+      |> Map.put(:latest_value, latest_value)
+      |> Map.put(:profit_percent, profit_percent)
     end)
   end
 
@@ -269,15 +279,27 @@ defmodule Boonorbust.Ledgers do
 
   defp latest_price(_root_asset, _code), do: "1" |> Decimal.new()
 
-  @spec profit(integer(), list(Ledger.t())) :: Decimal.t()
-  def profit(user_id, latest_ledgers) do
+  @spec profit_percent(integer(), list(Ledger.t())) :: Decimal.t()
+  def profit_percent(_user_id, []), do: Decimal.new(0)
+
+  def profit_percent(user_id, latest_ledgers) do
     profit_value =
       latest_ledgers
       |> Enum.reduce(Decimal.new(0), fn l, acc -> acc |> Decimal.add(l.latest_value) end)
 
+    total_cost =
+      latest_ledgers
+      |> Enum.reduce(Decimal.new(0), fn l, acc ->
+        if l.latest_value |> Decimal.negative?() do
+          l.latest_value |> Decimal.abs() |> Decimal.add(acc)
+        else
+          acc
+        end
+      end)
+
     _profit = Profits.upsert(Date.utc_today(), profit_value, user_id)
 
-    profit_value
+    profit_value |> Decimal.div(total_cost) |> Decimal.mult(Decimal.new(100)) |> Decimal.round(2)
   end
 
   @spec portfolios(integer(), list(Ledger.t())) :: list(map())

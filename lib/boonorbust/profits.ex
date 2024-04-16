@@ -17,6 +17,7 @@ defmodule Boonorbust.Profits do
   def all(user_id) do
     Profit
     |> where([p], p.user_id == ^user_id)
+    |> order_by([p], asc: p.date)
     |> Repo.all()
   end
 end
