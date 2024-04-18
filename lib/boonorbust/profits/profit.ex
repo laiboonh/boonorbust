@@ -6,6 +6,7 @@ defmodule Boonorbust.Profits.Profit do
   schema "profits" do
     field :date, :date
     field :value, :decimal
+    field :cost, :decimal
     belongs_to :user, Boonorbust.Accounts.User
   end
 end

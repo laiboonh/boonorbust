@@ -284,23 +284,29 @@ defmodule Boonorbust.Ledgers do
   def profit_percent(_user_id, []), do: Decimal.new(0)
 
   def profit_percent(user_id, latest_ledgers) do
-    profit_value =
+    {total_cost, total_value} =
       latest_ledgers
-      |> Enum.reduce(Decimal.new(0), fn l, acc -> acc |> Decimal.add(l.latest_value) end)
-
-    total_cost =
-      latest_ledgers
-      |> Enum.reduce(Decimal.new(0), fn l, acc ->
+      |> Enum.reduce({Decimal.new(0), Decimal.new(0)}, fn l, {cost, value} ->
         if l.latest_value |> Decimal.negative?() do
-          l.latest_value |> Decimal.abs() |> Decimal.add(acc)
+          cost = l.latest_value |> Decimal.abs() |> Decimal.add(cost)
+          {cost, value}
         else
-          acc
+          value = l.latest_value |> Decimal.add(value)
+          {cost, value}
         end
       end)
 
-    _profit = Profits.upsert(Date.utc_today(), profit_value, user_id)
+    profit = total_value |> Decimal.sub(total_cost)
 
-    profit_value |> Decimal.div(total_cost) |> Decimal.mult(Decimal.new(100)) |> Decimal.round(2)
+    _profit =
+      Profits.upsert(%{
+        date: Date.utc_today(),
+        cost: total_cost,
+        value: total_value,
+        user_id: user_id
+      })
+
+    profit |> Decimal.div(total_cost) |> Decimal.mult(Decimal.new(100)) |> Decimal.round(2)
   end
 
   @spec portfolios(integer(), list(Ledger.t())) :: list(map())

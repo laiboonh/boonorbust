@@ -4,11 +4,11 @@ defmodule Boonorbust.Profits do
   alias Boonorbust.Profits.Profit
   alias Boonorbust.Repo
 
-  @spec upsert(Date.t(), Decimal.t(), integer()) :: Profit.t()
-  def upsert(date, value, user_id) do
+  @spec upsert(%{atom => any()}) :: Profit.t()
+  def upsert(%{date: date, value: value, cost: cost, user_id: user_id}) do
     Repo.insert!(
-      %Boonorbust.Profits.Profit{date: date, value: value, user_id: user_id},
-      on_conflict: [set: [value: value]],
+      %Boonorbust.Profits.Profit{date: date, value: value, cost: cost, user_id: user_id},
+      on_conflict: [set: [value: value, cost: cost]],
       conflict_target: [:date, :user_id]
     )
   end
