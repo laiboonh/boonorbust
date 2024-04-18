@@ -44,8 +44,8 @@ defmodule BoonorbustWeb.PageController do
 
     opts = [
       mapping: %{category_col: "Tag", value_col: "Value"},
-      colour_palette: ["fbb4ae", "b3cde3", "ccebc5"],
-      legend_setting: :legend_right,
+      colour_palette: ["16a34a", "c13584", "499be4", "FF0000", "00f2ea"],
+      legend_setting: :legend_bottom,
       data_labels: true,
       title: portfolio.name
     ]
