@@ -238,10 +238,24 @@ defmodule Boonorbust.Ledgers do
     |> Floki.find(".mod-ui-data-list__value")
     |> hd()
     |> Floki.text()
+    |> String.replace(",", "")
     |> Decimal.new()
   end
 
   @spec latest_price(Asset.t(), binary()) :: Decimal.t()
+  defp latest_price(_root_asset, "COMMODITY." <> code) do
+    {:ok, %Finch.Response{body: body}} =
+      Finch.build(:get, "https://markets.ft.com/data/commodities/tearsheet/summary?c=#{code}")
+      |> Finch.request(Boonorbust.Finch)
+
+    Floki.parse_document!(body)
+    |> Floki.find(".mod-ui-data-list__value")
+    |> hd()
+    |> Floki.text()
+    |> String.replace(",", "")
+    |> Decimal.new()
+  end
+
   defp latest_price(_root_asset, "FUND." <> code) do
     {:ok, %Finch.Response{body: body}} =
       Finch.build(:get, "https://markets.ft.com/data/funds/tearsheet/summary?s=#{code}:SGD")
@@ -251,6 +265,7 @@ defmodule Boonorbust.Ledgers do
     |> Floki.find(".mod-ui-data-list__value")
     |> hd()
     |> Floki.text()
+    |> String.replace(",", "")
     |> Decimal.new()
   end
 
@@ -262,6 +277,7 @@ defmodule Boonorbust.Ledgers do
     Floki.parse_document!(body)
     |> Floki.find("strong[class*='stock-price']")
     |> Floki.text()
+    |> String.replace(",", "")
     |> Decimal.new()
   end
 
@@ -275,6 +291,7 @@ defmodule Boonorbust.Ledgers do
       |> Finch.request(Boonorbust.Finch)
 
     "#{Jason.decode!(body)["data"][code]["quote"][root_asset.code]["price"]}"
+    |> String.replace(",", "")
     |> Decimal.new()
   end
 
