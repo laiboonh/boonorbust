@@ -1,5 +1,7 @@
 defmodule BoonorbustWeb.PageController do
   alias Boonorbust.Ledgers
+  alias Boonorbust.Profits
+
   use BoonorbustWeb, :controller
 
   def home(conn, _params) do
@@ -9,7 +11,12 @@ defmodule BoonorbustWeb.PageController do
 
     case Map.get(conn.assigns, :current_user) do
       nil ->
-        render(conn, :home, latest_ledgers: nil, profit_percent: nil, portfolios: nil)
+        render(conn, :home,
+          latest_ledgers: nil,
+          profit_percent: nil,
+          portfolio_svgs: nil,
+          profit_svg: nil
+        )
 
       current_user ->
         all_latest =
@@ -21,8 +28,49 @@ defmodule BoonorbustWeb.PageController do
         render(conn, :home,
           latest_ledgers: all_latest,
           profit_percent: Ledgers.profit_percent(current_user.id, all_latest),
-          portfolios: Ledgers.portfolios(current_user.id, all_latest)
+          portfolio_svgs:
+            Ledgers.portfolios(current_user.id, all_latest) |> Enum.map(&portfolio_to_svg(&1)),
+          profit_svg: Profits.all(current_user.id) |> profit_svg()
         )
     end
+  end
+
+  defp portfolio_to_svg(portfolio) do
+    data =
+      portfolio.tag_values
+      |> Enum.map(fn tag_value -> [tag_value.name, tag_value.value |> Decimal.to_float()] end)
+
+    dataset = Contex.Dataset.new(data, ["Tag", "Value"])
+
+    opts = [
+      mapping: %{category_col: "Tag", value_col: "Value"},
+      colour_palette: ["fbb4ae", "b3cde3", "ccebc5"],
+      legend_setting: :legend_right,
+      data_labels: true,
+      title: portfolio.name
+    ]
+
+    Contex.Plot.new(dataset, Contex.PieChart, 600, 400, opts) |> Contex.Plot.to_svg()
+  end
+
+  defp profit_svg([]), do: nil
+
+  defp profit_svg(profits) do
+    data =
+      profits
+      |> Enum.map(fn profit ->
+        [
+          profit.date |> DateTime.new!(~T[00:00:00.000], "Etc/UTC"),
+          profit.cost |> Decimal.to_float(),
+          profit.value |> Decimal.to_float()
+        ]
+      end)
+
+    dataset = Contex.Dataset.new(data, ["Date", "Cost", "Value"])
+
+    opts = [mapping: %{x_col: "Date", y_cols: ["Cost", "Value"]}]
+
+    Contex.Plot.new(dataset, Contex.LinePlot, 600, 400, opts)
+    |> Contex.Plot.to_svg()
   end
 end

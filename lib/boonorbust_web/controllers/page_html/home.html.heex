@@ -12,13 +12,13 @@
   <% end %>
 <% end %>
 
-<%= if @portfolios do %>
-  <%= for portfolio <- @portfolios do %>
-    <.table id={portfolio.name} rows={portfolio.tag_values} caption={portfolio.name}>
-      <:col :let={tag_value} label="Tag"><%= tag_value.name %></:col>
-      <:col :let={tag_value} label="Value"><%= tag_value.value %></:col>
-      <:col :let={tag_value} label="%"><%= tag_value.percentage %>%</:col>
-    </.table>
+<%= if @profit_svg do %>
+  <%= @profit_svg %>
+<% end %>
+
+<%= if @portfolio_svgs do %>
+  <%= for portfolio_svg <- @portfolio_svgs do %>
+    <%= portfolio_svg %>
   <% end %>
 <% end %>
 
@@ -26,8 +26,6 @@
   <.table id="ledgers" rows={@latest_ledgers}>
     <:col :let={ledger} label="Name"><%= ledger.asset.name %></:col>
     <:col :let={ledger} label="Code"><%= ledger.asset.code %></:col>
-    <:col :let={ledger} label="Latest Value"><%= ledger.latest_value %></:col>
-    <:col :let={ledger} label="Inventory Cost"><%= ledger.inventory_cost %></:col>
     <:col :let={ledger} label="Profit %"><%= ledger.profit_percent %>%</:col>
   </.table>
 <% end %>
