@@ -4,6 +4,8 @@ defmodule BoonorbustWeb.Trades.TradeLive do
   alias Boonorbust.Trades
   alias Boonorbust.Trades.Trade
 
+  @page_size 1
+
   def render(assigns) do
     ~H"""
     <.header class="text-center">
@@ -58,31 +60,85 @@ defmodule BoonorbustWeb.Trades.TradeLive do
         <:col :let={trade} label="To Asset Unit Cost"><%= trade.to_asset_unit_cost %></:col>
         <:col :let={trade} label="Transacted At"><%= trade.transacted_at %></:col>
         <:col :let={trade} label="Note"><%= trade.note %></:col>
-        <:col :let={trade} label="Action">
+        <:action :let={trade}>
           <.link patch={~p"/trades/#{trade.id}"}><.icon name="hero-pencil-square-solid" /></.link>
           <.link patch={~p"/trades/new"}><.icon name="hero-document-plus-solid" /></.link>
           <span phx-click="delete" phx-value-id={trade.id}><.icon name="hero-trash-solid" /></span>
-        </:col>
+        </:action>
       </.table>
     <% end %>
+
+    <div style="display: flex; flex-direction: row; padding: 2px;">
+      <div>
+        <%= if @page_number > 1 do %>
+          <.link patch={~p"/trades/new?page=#{@page_number - 1}"}>
+            <div class="flex gap-2 items-center ">
+              Previous
+            </div>
+          </.link>
+        <% end %>
+      </div>
+
+      <div style="display: flex; flex-direction: row; padding: 2px;">
+        <%= for idx <-  Enum.to_list(1..@total_pages) do %>
+          <.link patch={~p"/trades/new?page=#{idx}"}>
+            <%= if @page_number == idx do %>
+              <p style="border: 1px solid black; padding-left: 5px; padding-right: 5px;">
+                <%= idx %>
+              </p>
+            <% else %>
+              <p style="padding-left: 5px; padding-right: 5px;">
+                <%= idx %>
+              </p>
+            <% end %>
+          </.link>
+        <% end %>
+      </div>
+
+      <div>
+        <%= if @page_number < @total_pages do %>
+          <.link patch={~p"/trades/new?page=#{@page_number + 1}"}>
+            <div class="flex gap-2 items-center ">
+              Next
+            </div>
+          </.link>
+        <% end %>
+      </div>
+    </div>
     """
   end
 
-  def asset_name(asset_options, id) do
+  defp asset_name(asset_options, id) do
     {asset_name, _} =
       asset_options |> Enum.find(fn {_asset_name, asset_id} -> asset_id == id end)
 
     asset_name
   end
 
-  def asset_options(user_id) do
+  defp asset_options(user_id) do
     [
       {"-", nil}
       | Boonorbust.Assets.all(user_id) |> Enum.map(fn asset -> {asset.name, asset.id} end)
     ]
   end
 
-  def mount(%{"id" => id}, _session, socket) do
+  def refresh_table(socket, params) do
+    user_id = socket.assigns.current_user.id
+
+    result =
+      Trades.all(user_id, %{
+        page: Map.get(params, "page", 1),
+        page_size: Map.get(params, "page_size", @page_size)
+      })
+
+    socket
+    |> assign(:trades, result.entries)
+    |> assign(:total_pages, result.total_pages)
+    |> assign(:page_number, result.page_number)
+    |> assign(:total_entries, result.total_entries)
+  end
+
+  def mount(%{"id" => id} = params, _session, socket) do
     user_id = socket.assigns.current_user.id
 
     socket =
@@ -91,7 +147,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
           trade_changeset = Trade.changeset(%Trade{}, %{})
 
           socket
-          |> assign(:trades, Trades.all(user_id))
+          |> refresh_table(params)
           |> assign(:action, "update")
           |> assign(:trade_form, to_form(trade_changeset))
           |> put_flash(:error, "Trade #{id} not found")
@@ -100,7 +156,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
           trade_changeset = Trade.changeset(trade, %{})
 
           socket
-          |> assign(:trades, Trades.all(user_id))
+          |> refresh_table(params)
           |> assign(:action, "update")
           |> assign(:trade_form, to_form(trade_changeset))
           |> assign(:asset_options, asset_options(user_id))
@@ -109,14 +165,14 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     {:ok, socket}
   end
 
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     user_id = socket.assigns.current_user.id
 
     trade_changeset = Trade.changeset(%Trade{}, %{user_id: user_id})
 
     socket =
       socket
-      |> assign(:trades, Trades.all(user_id))
+      |> refresh_table(params)
       |> assign(:action, "insert")
       |> assign(:trade_form, to_form(trade_changeset))
       |> assign(:asset_options, asset_options(user_id))
@@ -124,27 +180,28 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     {:ok, socket}
   end
 
-  def handle_params(%{"id" => id}, _uri, socket) do
+  def handle_params(%{"id" => id} = params, _uri, socket) do
     user_id = socket.assigns.current_user.id
     trade = Trades.get(id, user_id)
     trade_changeset = Trade.changeset(trade, %{})
 
     socket =
       socket
-      |> assign(:trades, Trades.all(user_id))
+      |> refresh_table(params)
       |> assign(:action, "update")
       |> assign(:trade_form, to_form(trade_changeset))
 
     {:noreply, socket}
   end
 
-  def handle_params(_params, _uri, socket) do
-    user = socket.assigns.current_user
+  def handle_params(params, _uri, socket) do
+    user_id = socket.assigns.current_user.id
 
     socket =
       socket
+      |> refresh_table(params)
       |> assign(:action, "insert")
-      |> assign(:trade_form, to_form(Trade.changeset(%Trade{}, %{user_id: user.id})))
+      |> assign(:trade_form, to_form(Trade.changeset(%Trade{}, %{user_id: user_id})))
 
     {:noreply, socket}
   end
@@ -176,7 +233,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
            }) do
         {:ok, %{insert: trade}} ->
           socket
-          |> assign(:trades, Trades.all(user_id))
+          |> refresh_table(params)
           |> assign(:trade_form, to_form(Trade.changeset(%Trade{}, %{user_id: user_id})))
           |> put_flash(:info, "Trade #{trade.id} Inserted. Ledger updated.")
 
@@ -220,7 +277,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
           info = "Trade #{trade.id} Updated"
 
           socket
-          |> assign(:trades, Trades.all(user_id))
+          |> refresh_table(params)
           |> put_flash(:info, info)
 
         {:error, changeset} ->
@@ -230,7 +287,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     {:noreply, socket}
   end
 
-  def handle_event("delete", %{"id" => id}, socket) do
+  def handle_event("delete", %{"id" => id} = params, socket) do
     user_id = socket.assigns.current_user.id
 
     socket =
@@ -239,7 +296,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
           info = "Trade #{trade.id} Deleted"
 
           socket
-          |> assign(:trades, Trades.all(user_id))
+          |> refresh_table(params)
           |> put_flash(:info, info)
 
         {:error, changeset} ->

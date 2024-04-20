@@ -67,4 +67,30 @@ defmodule Boonorbust.TradesTest do
       assert Trades.all_asc_trasacted_at(user.id) == [trade_1, trade_2]
     end
   end
+
+  describe "all" do
+    test "paging" do
+      user = user_fixture()
+
+      assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
+      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
+
+      1..11
+      |> Enum.each(fn num ->
+        Trades.create(%{
+          from_asset_id: sgd.id,
+          to_asset_id: usd.id,
+          from_qty: 105,
+          to_qty: 75,
+          to_asset_unit_cost: 1.4,
+          transacted_at: Date.utc_today() |> Date.add(num),
+          user_id: user.id
+        })
+      end)
+
+      assert Trades.all(user.id, %{page: 1, page_size: 10}).entries |> length() == 10
+
+      assert Trades.all(user.id, %{page: 2, page_size: 10}).entries |> length() == 1
+    end
+  end
 end

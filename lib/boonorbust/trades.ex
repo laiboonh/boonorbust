@@ -32,12 +32,12 @@ defmodule Boonorbust.Trades do
     |> Repo.update()
   end
 
-  @spec all(integer()) :: [Trade.t()]
-  def all(user_id) do
+  @spec all(integer(), %{atom() => any()}) :: Scrivener.Page.t()
+  def all(user_id, attrs \\ %{page: 1, page_size: 1}) do
     Trade
     |> where([a], a.user_id == ^user_id)
-    |> order_by(desc: :inserted_at)
-    |> Repo.all()
+    |> order_by(desc: :transacted_at)
+    |> Repo.paginate(attrs)
   end
 
   @spec all_asc_trasacted_at(integer()) :: [Trade.t()]
