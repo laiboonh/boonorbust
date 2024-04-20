@@ -4,7 +4,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
   alias Boonorbust.Trades
   alias Boonorbust.Trades.Trade
 
-  @page_size 1
+  @page_size 20
 
   def render(assigns) do
     ~H"""
