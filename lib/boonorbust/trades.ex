@@ -37,7 +37,7 @@ defmodule Boonorbust.Trades do
   def all_asc_trasacted_at(user_id) do
     Trade
     |> where([a], a.user_id == ^user_id)
-    |> order_by(asc: :transacted_at)
+    |> order_by([:transacted_at, :id])
     |> Repo.all()
   end
 
