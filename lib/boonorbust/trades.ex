@@ -1,14 +1,21 @@
 defmodule Boonorbust.Trades do
   import Ecto.Query, warn: false
 
+  alias Boonorbust.Ledgers
   alias Boonorbust.Repo
   alias Boonorbust.Trades.Trade
+  alias Ecto.Multi
 
-  @spec create(%{atom => any()}) :: {:ok, Trade.t()} | {:error, Ecto.Changeset.t()}
+  @spec create(%{atom => any()}) :: {:ok, any()} | {:error, any()} | Ecto.Multi.failure()
   def create(attrs) do
-    %Trade{}
-    |> Trade.changeset(attrs)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(
+      :insert,
+      %Trade{}
+      |> Trade.changeset(attrs)
+    )
+    |> Multi.run(:record, fn _repo, %{insert: trade} -> Ledgers.record(trade) end)
+    |> Repo.transaction()
   end
 
   @spec get(integer(), integer()) :: Trade.t() | nil

@@ -13,7 +13,7 @@ defmodule Boonorbust.LedgersTest do
       assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
       assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
 
-      {:ok, trade} =
+      {:ok, %{record: result}} =
         Trades.create(%{
           from_asset_id: sgd.id,
           to_asset_id: usd.id,
@@ -23,8 +23,6 @@ defmodule Boonorbust.LedgersTest do
           transacted_at: Date.utc_today(),
           user_id: user.id
         })
-
-      {:ok, result} = Ledgers.record(trade)
 
       assert result.insert_sell_asset_latest_ledger.inventory_qty == Decimal.new(-105)
       assert result.insert_sell_asset_latest_ledger.inventory_cost == Decimal.new(-105)
@@ -42,7 +40,7 @@ defmodule Boonorbust.LedgersTest do
       assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
       assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
 
-      {:ok, trade} =
+      {:ok, _result} =
         Trades.create(%{
           from_asset_id: sgd.id,
           to_asset_id: usd.id,
@@ -53,10 +51,8 @@ defmodule Boonorbust.LedgersTest do
           user_id: user.id
         })
 
-      {:ok, _result} = Ledgers.record(trade)
-
       # spend 1.23 SGD on Fees
-      {:ok, trade} =
+      {:ok, %{record: result}} =
         Trades.create(%{
           from_asset_id: sgd.id,
           to_asset_id: nil,
@@ -66,8 +62,6 @@ defmodule Boonorbust.LedgersTest do
           transacted_at: Date.utc_today(),
           user_id: user.id
         })
-
-      {:ok, result} = Ledgers.record(trade)
 
       assert result.insert_sell_asset_latest_ledger.inventory_qty == Decimal.from_float(-106.23)
       assert result.insert_sell_asset_latest_ledger.inventory_cost == Decimal.from_float(-106.23)
@@ -80,7 +74,7 @@ defmodule Boonorbust.LedgersTest do
       assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
       assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
 
-      {:ok, trade} =
+      {:ok, _result} =
         Trades.create(%{
           from_asset_id: sgd.id,
           to_asset_id: usd.id,
@@ -91,10 +85,8 @@ defmodule Boonorbust.LedgersTest do
           user_id: user.id
         })
 
-      {:ok, _result} = Ledgers.record(trade)
-
       # get 1.23 SGD dividends
-      {:ok, trade} =
+      {:ok, %{record: result}} =
         Trades.create(%{
           from_asset_id: nil,
           to_asset_id: sgd.id,
@@ -105,8 +97,6 @@ defmodule Boonorbust.LedgersTest do
           user_id: user.id
         })
 
-      {:ok, result} = Ledgers.record(trade)
-
       # -105 + 1.23 =
       assert result.insert_buy_asset_latest_ledger.inventory_qty == Decimal.from_float(-103.77)
       assert result.insert_buy_asset_latest_ledger.inventory_cost == Decimal.from_float(-103.77)
@@ -115,12 +105,12 @@ defmodule Boonorbust.LedgersTest do
   end
 
   describe "all_latest" do
-    test "sold assets are not returned" do
+    test "sold assets (inventory_qty = 0) are not returned" do
       user = user_fixture()
       assert {:ok, apple} = Assets.create(%{name: "apple", user_id: user.id, code: "apple"})
       assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true, code: "sgd"})
 
-      {:ok, _trade} =
+      {:ok, _result} =
         Trades.create(%{
           from_asset_id: sgd.id,
           to_asset_id: apple.id,
@@ -131,7 +121,7 @@ defmodule Boonorbust.LedgersTest do
           user_id: user.id
         })
 
-      {:ok, _trade} =
+      {:ok, _result} =
         Trades.create(%{
           from_asset_id: apple.id,
           to_asset_id: sgd.id,

@@ -9,7 +9,8 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
   describe "Insert" do
     test "success", %{conn: conn} do
       user = user_fixture()
-      asset = asset_fixture(%{name: "SGD", user_id: user.id})
+      from_asset = asset_fixture(%{name: "SGD", user_id: user.id, root: true})
+      to_asset = asset_fixture(%{name: "USD", user_id: user.id, root: false})
 
       {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/trades/new")
 
@@ -17,9 +18,9 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
         lv
         |> form("#trade_form",
           trade: %{
-            "from_asset_id" => asset.id,
+            "from_asset_id" => from_asset.id,
             "from_qty" => 1,
-            "to_asset_id" => asset.id,
+            "to_asset_id" => to_asset.id,
             "to_qty" => 1,
             "user_id" => user.id,
             "to_asset_unit_cost" => 1,
@@ -35,13 +36,14 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
   describe "Update" do
     test "success", %{conn: conn} do
       user = user_fixture()
-      asset = asset_fixture(%{name: "SGD", user_id: user.id})
+      from_asset = asset_fixture(%{name: "SGD", user_id: user.id, root: true})
+      to_asset = asset_fixture(%{name: "USD", user_id: user.id, root: false})
 
-      {:ok, trade} =
+      {:ok, %{insert: trade}} =
         Trades.create(%{
-          "from_asset_id" => asset.id,
+          "from_asset_id" => from_asset.id,
           "from_qty" => 1,
-          "to_asset_id" => asset.id,
+          "to_asset_id" => to_asset.id,
           "to_qty" => 1,
           "user_id" => user.id,
           "to_asset_unit_cost" => 1,
@@ -65,13 +67,14 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
   describe "Delete" do
     test "success", %{conn: conn} do
       user = user_fixture()
-      asset = asset_fixture(%{name: "SGD", user_id: user.id})
+      from_asset = asset_fixture(%{name: "SGD", user_id: user.id, root: true})
+      to_asset = asset_fixture(%{name: "USD", user_id: user.id, root: false})
 
-      {:ok, trade} =
+      {:ok, %{insert: trade}} =
         Trades.create(%{
-          "from_asset_id" => asset.id,
+          "from_asset_id" => from_asset.id,
           "from_qty" => 1,
-          "to_asset_id" => asset.id,
+          "to_asset_id" => to_asset.id,
           "to_qty" => 1,
           "user_id" => user.id,
           "to_asset_unit_cost" => 1,

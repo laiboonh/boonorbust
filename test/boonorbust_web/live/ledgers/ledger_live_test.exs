@@ -1,11 +1,10 @@
 defmodule BoonorbustWeb.Ledgers.LedgerLiveTest do
-  alias Boonorbust.Assets
   use BoonorbustWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
   import Boonorbust.AccountsFixtures
 
-  alias Boonorbust.Ledgers
+  alias Boonorbust.Assets
   alias Boonorbust.Trades
 
   describe "Search" do
@@ -15,7 +14,7 @@ defmodule BoonorbustWeb.Ledgers.LedgerLiveTest do
       assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
       assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
 
-      {:ok, trade} =
+      {:ok, _result} =
         Trades.create(%{
           from_asset_id: sgd.id,
           to_asset_id: usd.id,
@@ -25,8 +24,6 @@ defmodule BoonorbustWeb.Ledgers.LedgerLiveTest do
           transacted_at: Date.utc_today(),
           user_id: user.id
         })
-
-      {:ok, _result} = Ledgers.record(trade)
 
       {:ok, lv, html} = conn |> log_in_user(user) |> live(~p"/ledgers")
 

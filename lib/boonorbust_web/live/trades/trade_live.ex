@@ -174,11 +174,11 @@ defmodule BoonorbustWeb.Trades.TradeLive do
              transacted_at: transacted_at,
              note: note
            }) do
-        {:ok, trade} ->
+        {:ok, %{insert: trade}} ->
           socket
           |> assign(:trades, Trades.all(user_id))
           |> assign(:trade_form, to_form(Trade.changeset(%Trade{}, %{user_id: user_id})))
-          |> put_flash(:info, "Trade #{trade.id} Inserted")
+          |> put_flash(:info, "Trade #{trade.id} Inserted. Ledger updated.")
 
         {:error, changeset} ->
           socket
