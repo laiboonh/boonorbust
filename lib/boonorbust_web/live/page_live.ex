@@ -51,33 +51,48 @@ defmodule BoonorbustWeb.PageLive do
   end
 
   def mount(_params, _session, socket) do
-    user_id = socket.assigns.current_user.id
-
-    all_latest =
-      Ledgers.all_latest(user_id)
-      |> Enum.sort(fn %{profit_percent: pp1}, %{profit_percent: pp2} ->
-        Decimal.compare(pp1, pp2) == :lt
-      end)
-
-    socket =
-      socket
-      |> assign(:latest_ledgers, all_latest)
-      |> assign(:profit_percent, Ledgers.profit_percent(user_id, all_latest))
-      |> assign_async(
-        :portfolio_svgs,
-        fn ->
-          {:ok,
-           %{
-             portfolio_svgs:
-               Ledgers.portfolios(user_id, all_latest) |> Enum.map(&portfolio_to_svg(&1))
-           }}
-        end
-      )
-      |> assign_async(:profit_svg, fn ->
-        {:ok, %{profit_svg: Profits.all(user_id) |> profit_svg()}}
-      end)
-
     {:ok, socket}
+  end
+
+  def handle_params(_params, _uri, socket) do
+    if connected?(socket) do
+      user_id = socket.assigns.current_user.id
+
+      all_latest =
+        Ledgers.all_latest(user_id)
+        |> Enum.sort(fn %{profit_percent: pp1}, %{profit_percent: pp2} ->
+          Decimal.compare(pp1, pp2) == :lt
+        end)
+
+      socket =
+        socket
+        |> assign(:latest_ledgers, all_latest)
+        |> assign(:profit_percent, Ledgers.profit_percent(user_id, all_latest))
+        |> assign_async(
+          :portfolio_svgs,
+          fn ->
+            {:ok,
+             %{
+               portfolio_svgs:
+                 Ledgers.portfolios(user_id, all_latest) |> Enum.map(&portfolio_to_svg(&1))
+             }}
+          end
+        )
+        |> assign_async(:profit_svg, fn ->
+          {:ok, %{profit_svg: Profits.all(user_id) |> profit_svg()}}
+        end)
+
+      {:noreply, socket}
+    else
+      socket =
+        socket
+        |> assign(:latest_ledgers, nil)
+        |> assign(:profit_percent, nil)
+        |> assign_async(:portfolio_svgs, fn -> {:ok, %{portfolio_svgs: nil}} end)
+        |> assign_async(:profit_svg, fn -> {:ok, %{profit_svg: nil}} end)
+
+      {:noreply, socket}
+    end
   end
 
   defp portfolio_to_svg(portfolio) do
