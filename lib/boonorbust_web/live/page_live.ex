@@ -6,6 +6,10 @@ defmodule BoonorbustWeb.PageLive do
 
   def render(assigns) do
     ~H"""
+    <%= if @loading_all_assets do %>
+      Loading all assets...
+    <% end %>
+
     <%= if @profit_percent do %>
       <%= if @profit_percent |> Decimal.positive?() do %>
         <p
@@ -51,48 +55,57 @@ defmodule BoonorbustWeb.PageLive do
   end
 
   def mount(_params, _session, socket) do
-    {:ok, socket}
-  end
+    self = self()
 
-  def handle_params(_params, _uri, socket) do
     if connected?(socket) do
       user_id = socket.assigns.current_user.id
 
-      all_latest =
-        Ledgers.all_latest(user_id)
-        |> Enum.sort(fn %{profit_percent: pp1}, %{profit_percent: pp2} ->
-          Decimal.compare(pp1, pp2) == :lt
+      {:ok, _pid} =
+        Task.start_link(fn ->
+          send(self, :working)
+          all_latest = Ledgers.all_latest(user_id)
+          send(self, {:task_done, all_latest})
         end)
-
-      socket =
-        socket
-        |> assign(:latest_ledgers, all_latest)
-        |> assign(:profit_percent, Ledgers.profit_percent(user_id, all_latest))
-        |> assign_async(
-          :portfolio_svgs,
-          fn ->
-            {:ok,
-             %{
-               portfolio_svgs:
-                 Ledgers.portfolios(user_id, all_latest) |> Enum.map(&portfolio_to_svg(&1))
-             }}
-          end
-        )
-        |> assign_async(:profit_svg, fn ->
-          {:ok, %{profit_svg: Profits.all(user_id) |> profit_svg()}}
-        end)
-
-      {:noreply, socket}
-    else
-      socket =
-        socket
-        |> assign(:latest_ledgers, nil)
-        |> assign(:profit_percent, nil)
-        |> assign_async(:portfolio_svgs, fn -> {:ok, %{portfolio_svgs: nil}} end)
-        |> assign_async(:profit_svg, fn -> {:ok, %{profit_svg: nil}} end)
-
-      {:noreply, socket}
     end
+
+    socket =
+      socket
+      |> assign(:loading_all_assets, nil)
+      |> assign(:latest_ledgers, nil)
+      |> assign(:profit_percent, nil)
+      |> assign_async(:portfolio_svgs, fn -> {:ok, %{portfolio_svgs: []}} end)
+      |> assign_async(:profit_svg, fn -> {:ok, %{profit_svg: nil}} end)
+
+    {:ok, socket}
+  end
+
+  def handle_info(:working, socket) do
+    {:noreply, assign(socket, loading_all_assets: true)}
+  end
+
+  def handle_info({:task_done, all_latest}, socket) do
+    user_id = socket.assigns.current_user.id
+
+    socket =
+      socket
+      |> assign(loading_all_assets: false)
+      |> assign(:latest_ledgers, all_latest)
+      |> assign(:profit_percent, Ledgers.profit_percent(user_id, all_latest))
+      |> assign_async(
+        :portfolio_svgs,
+        fn ->
+          {:ok,
+           %{
+             portfolio_svgs:
+               Ledgers.portfolios(user_id, all_latest) |> Enum.map(&portfolio_to_svg(&1))
+           }}
+        end
+      )
+      |> assign_async(:profit_svg, fn ->
+        {:ok, %{profit_svg: Profits.all(user_id) |> profit_svg()}}
+      end)
+
+    {:noreply, socket}
   end
 
   defp portfolio_to_svg(portfolio) do

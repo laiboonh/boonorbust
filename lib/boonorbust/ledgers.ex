@@ -216,6 +216,9 @@ defmodule Boonorbust.Ledgers do
       |> Map.put(:latest_value, latest_value)
       |> Map.put(:profit_percent, profit_percent)
     end)
+    |> Enum.sort(fn %{profit_percent: pp1}, %{profit_percent: pp2} ->
+      Decimal.compare(pp1, pp2) == :lt
+    end)
   end
 
   @spec delete(integer()) :: {non_neg_integer(), nil | [term()]}
