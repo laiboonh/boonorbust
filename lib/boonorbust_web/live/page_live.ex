@@ -29,20 +29,16 @@ defmodule BoonorbustWeb.PageLive do
     <% end %>
 
     <.modal id="profit-svg-modal">
-      <.async_result :let={profit_svg} assign={@profit_svg}>
-        <:loading>Loading profit line chart...</:loading>
-        <:failed :let={_failure}>there was an error loading the profit line chart</:failed>
-        <%= profit_svg %>
-      </.async_result>
+      <%= if @profit_svg do %>
+        <%= @profit_svg %>
+      <% end %>
     </.modal>
 
-    <.async_result :let={portfolio_svgs} assign={@portfolio_svgs}>
-      <:loading>Loading portfolio pie charts...</:loading>
-      <:failed :let={_failure}>there was an error loading the portfolio pie charts</:failed>
-      <%= for portfolio_svg <- portfolio_svgs do %>
+    <%= if @portfolio_svgs do %>
+      <%= for portfolio_svg <- @portfolio_svgs do %>
         <%= portfolio_svg %>
       <% end %>
-    </.async_result>
+    <% end %>
 
     <%= if @latest_ledgers do %>
       <.table id="ledgers" rows={@latest_ledgers}>
@@ -73,8 +69,8 @@ defmodule BoonorbustWeb.PageLive do
       |> assign(:loading_all_assets, nil)
       |> assign(:latest_ledgers, nil)
       |> assign(:profit_percent, nil)
-      |> assign_async(:portfolio_svgs, fn -> {:ok, %{portfolio_svgs: []}} end)
-      |> assign_async(:profit_svg, fn -> {:ok, %{profit_svg: nil}} end)
+      |> assign(:portfolio_svgs, nil)
+      |> assign(:profit_svg, nil)
 
     {:ok, socket}
   end
@@ -91,19 +87,11 @@ defmodule BoonorbustWeb.PageLive do
       |> assign(loading_all_assets: false)
       |> assign(:latest_ledgers, all_latest)
       |> assign(:profit_percent, Ledgers.profit_percent(user_id, all_latest))
-      |> assign_async(
+      |> assign(
         :portfolio_svgs,
-        fn ->
-          {:ok,
-           %{
-             portfolio_svgs:
-               Ledgers.portfolios(user_id, all_latest) |> Enum.map(&portfolio_to_svg(&1))
-           }}
-        end
+        Ledgers.portfolios(user_id, all_latest) |> Enum.map(&portfolio_to_svg(&1))
       )
-      |> assign_async(:profit_svg, fn ->
-        {:ok, %{profit_svg: Profits.all(user_id) |> profit_svg()}}
-      end)
+      |> assign(:profit_svg, Profits.all(user_id) |> profit_svg())
 
     {:noreply, socket}
   end
