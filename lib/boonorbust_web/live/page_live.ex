@@ -8,19 +8,27 @@ defmodule BoonorbustWeb.PageLive do
     ~H"""
     <%= if @profit_percent do %>
       <%= if @profit_percent |> Decimal.positive?() do %>
-        <p class="text-green-700 text-2xl underline decoration-double text-right">
+        <p
+          phx-click={show_modal("profit-svg-modal")}
+          class="text-green-700 text-2xl underline decoration-double text-right"
+        >
           <%= @profit_percent %>%
         </p>
       <% else %>
-        <p class="text-red-700 text-2xl underline decoration-double text-right">
+        <p
+          phx-click={show_modal("profit-svg-modal")}
+          class="text-red-700 text-2xl underline decoration-double text-right"
+        >
           <%= @profit_percent %>%
         </p>
       <% end %>
     <% end %>
 
-    <%= if @profit_svg do %>
-      <%= @profit_svg %>
-    <% end %>
+    <.modal id="profit-svg-modal">
+      <%= if @profit_svg do %>
+        <%= @profit_svg %>
+      <% end %>
+    </.modal>
 
     <%= if @portfolio_svgs do %>
       <%= for portfolio_svg <- @portfolio_svgs do %>
