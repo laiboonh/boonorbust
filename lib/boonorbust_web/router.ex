@@ -20,7 +20,7 @@ defmodule BoonorbustWeb.Router do
   scope "/", BoonorbustWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    # get "/", PageController, :home
   end
 
   # Other scopes may use custom stacks.
@@ -82,6 +82,8 @@ defmodule BoonorbustWeb.Router do
       live "/trades/:id", Trades.TradeLive, :edit
 
       live "/ledgers", Ledgers.LedgerLive, :new
+
+      live "/", PageLive
     end
   end
 

@@ -52,7 +52,9 @@ defmodule BoonorbustWeb.UserConfirmationLiveTest do
       assert {:ok, conn} = result
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
-               "User confirmation link is invalid or it has expired"
+               "You must log in to access this page."
+
+      #  "User confirmation link is invalid or it has expired"
 
       # when logged in
       conn =
@@ -81,7 +83,9 @@ defmodule BoonorbustWeb.UserConfirmationLiveTest do
         |> follow_redirect(conn, ~p"/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
-               "User confirmation link is invalid or it has expired"
+               "You must log in to access this page."
+
+      #  "User confirmation link is invalid or it has expired"
 
       refute Accounts.get_user!(user.id).confirmed_at
     end
