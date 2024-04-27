@@ -25,16 +25,20 @@ defmodule BoonorbustWeb.PageLive do
     <% end %>
 
     <.modal id="profit-svg-modal">
-      <%= if @profit_svg do %>
-        <%= @profit_svg %>
-      <% end %>
+      <.async_result :let={profit_svg} assign={@profit_svg}>
+        <:loading>Loading profit line chart...</:loading>
+        <:failed :let={_failure}>there was an error loading the profit line chart</:failed>
+        <%= profit_svg %>
+      </.async_result>
     </.modal>
 
-    <%= if @portfolio_svgs do %>
-      <%= for portfolio_svg <- @portfolio_svgs do %>
+    <.async_result :let={portfolio_svgs} assign={@portfolio_svgs}>
+      <:loading>Loading portfolio pie charts...</:loading>
+      <:failed :let={_failure}>there was an error loading the portfolio pie charts</:failed>
+      <%= for portfolio_svg <- portfolio_svgs do %>
         <%= portfolio_svg %>
       <% end %>
-    <% end %>
+    </.async_result>
 
     <%= if @latest_ledgers do %>
       <.table id="ledgers" rows={@latest_ledgers}>
@@ -59,11 +63,19 @@ defmodule BoonorbustWeb.PageLive do
       socket
       |> assign(:latest_ledgers, all_latest)
       |> assign(:profit_percent, Ledgers.profit_percent(user_id, all_latest))
-      |> assign(
+      |> assign_async(
         :portfolio_svgs,
-        Ledgers.portfolios(user_id, all_latest) |> Enum.map(&portfolio_to_svg(&1))
+        fn ->
+          {:ok,
+           %{
+             portfolio_svgs:
+               Ledgers.portfolios(user_id, all_latest) |> Enum.map(&portfolio_to_svg(&1))
+           }}
+        end
       )
-      |> assign(:profit_svg, Profits.all(user_id) |> profit_svg())
+      |> assign_async(:profit_svg, fn ->
+        {:ok, %{profit_svg: Profits.all(user_id) |> profit_svg()}}
+      end)
 
     {:ok, socket}
   end
