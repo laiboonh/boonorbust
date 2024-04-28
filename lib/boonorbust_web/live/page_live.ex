@@ -42,8 +42,10 @@ defmodule BoonorbustWeb.PageLive do
 
     <%= if @latest_ledgers do %>
       <.table id="ledgers" rows={@latest_ledgers}>
-        <:col :let={ledger} label="Name"><%= ledger.asset.name %></:col>
-        <:col :let={ledger} label="Code"><%= ledger.asset.code %></:col>
+        <:col :let={ledger} label="Name">
+          <%= ledger.asset.name %><br />
+          <p class="text-slate-400"><%= ledger.asset.code %></p>
+        </:col>
         <:col :let={ledger} label="Profit %"><%= ledger.profit_percent %>%</:col>
       </.table>
     <% end %>
