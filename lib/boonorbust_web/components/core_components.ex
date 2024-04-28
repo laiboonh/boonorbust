@@ -503,7 +503,7 @@ defmodule BoonorbustWeb.CoreComponents do
 
     ~H"""
     <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="w-[30rem] mt-11 sm:w-full">
+      <table class="w-screen mt-11 sm:w-full">
         <caption class="caption-top underline decoration-solid text-lg"><%= @caption %></caption>
         <thead class="text-sm text-left leading-6 text-zinc-500">
           <tr>
