@@ -7,7 +7,7 @@ defmodule BoonorbustWeb.PageLive do
   def render(assigns) do
     ~H"""
     <%= if @loading_all_assets do %>
-      Loading all assets...
+      <.spinner text="Loading all assets..." />
     <% end %>
 
     <%= if @profit_percent do %>
