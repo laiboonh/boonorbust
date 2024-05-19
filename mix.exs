@@ -68,7 +68,8 @@ defmodule Boonorbust.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:decimal, "~> 2.0"},
       {:contex, "~> 0.5.0"},
-      {:scrivener_ecto, "~> 2.0"}
+      {:scrivener_ecto, "~> 2.0"},
+      {:mox, "~> 1.0", only: :test}
     ]
   end
 

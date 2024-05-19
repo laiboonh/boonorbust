@@ -38,8 +38,8 @@ defmodule Boonorbust.Ledgers do
   end
 
   @spec get_latest(integer()) :: Ledger.t() | nil
-  defp get_latest(id) do
-    Repo.one(from l in Ledger, where: l.asset_id == ^id and l.latest == true)
+  defp get_latest(asset_id) do
+    Repo.one(from l in Ledger, where: l.asset_id == ^asset_id and l.latest == true)
   end
 
   @spec sell(Trade.t()) :: Multi.t()
@@ -108,14 +108,12 @@ defmodule Boonorbust.Ledgers do
        ) do
     qty = to_qty
 
-    # In the case of dividends we sell nothing to get something hence sell_asset_latest_ledger = nil
-    # In the case of sell asset to root asset (SGD)
     root_asset = Assets.root(user_id)
 
-    total_cost =
-      if sell_asset_latest_ledger == nil or root_asset.id == to_asset_id,
-        do: qty,
-        else: sell_asset_latest_ledger.total_cost |> Decimal.abs()
+    # In the case of dividends / free shares we sell nothing to get something hence sell_asset_latest_ledger = nil
+    # - For dividends to ROOT asset we have to maintain the weighted average cost at $1 hence we set total_cost = qty
+    # - All other cases total_cost is 0
+    total_cost = total_cost(sell_asset_latest_ledger, to_asset_id, root_asset, qty)
 
     unit_cost = total_cost |> Decimal.div(qty)
     latest_ledger = get_latest(to_asset_id)
@@ -163,6 +161,26 @@ defmodule Boonorbust.Ledgers do
     )
   end
 
+  defp total_cost(sell_asset_latest_ledger, to_asset_id, root_asset, qty) do
+    cond do
+      # dividend to root currency
+      sell_asset_latest_ledger == nil and root_asset.id == to_asset_id ->
+        qty
+
+      # dividend to on root currency / free shares
+      sell_asset_latest_ledger == nil and root_asset.id != to_asset_id ->
+        Decimal.new(0)
+
+      # sell assets in exchange for root currency
+      sell_asset_latest_ledger != nil and root_asset.id == to_asset_id ->
+        qty
+
+      # sell asset in exchange for non root currency / assets
+      sell_asset_latest_ledger != nil and root_asset.id != to_asset_id ->
+        sell_asset_latest_ledger.total_cost |> Decimal.abs()
+    end
+  end
+
   @spec all(integer(), integer()) :: [Ledger.t()]
   def all(user_id, asset_id) do
     Ledger
@@ -176,6 +194,7 @@ defmodule Boonorbust.Ledgers do
   @spec all_latest(integer()) :: [Ledger.t()]
   def all_latest(user_id) do
     root_asset = Assets.root(user_id)
+
     usdsgd = exchange_rate("usdsgd")
     hkdsgd = exchange_rate("hkdsgd")
 
@@ -232,11 +251,9 @@ defmodule Boonorbust.Ledgers do
   @spec exchange_rate(binary()) :: Decimal.t()
   def exchange_rate(currency_pair) do
     {:ok, %Finch.Response{body: body}} =
-      Finch.build(
-        :get,
+      Boonorbust.Http.get(
         "https://markets.ft.com/data/currencies/tearsheet/summary?s=#{currency_pair}"
       )
-      |> Finch.request(Boonorbust.Finch)
 
     Floki.parse_document!(body)
     |> Floki.find(".mod-ui-data-list__value")
