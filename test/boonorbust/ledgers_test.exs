@@ -133,6 +133,49 @@ defmodule Boonorbust.LedgersTest do
       # Because its not root asset any free shares or dividends to non root asset causues weighted average to drop
       assert usd_latest.weighted_average_cost != Decimal.new("1.4")
     end
+
+    test "success with free shares and then selling it to root currency" do
+      # spend 105 SGD (5 fee inclusive) to get 75 USD
+      user = user_fixture()
+      assert {:ok, apple} = Assets.create(%{name: "apple", user_id: user.id})
+      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
+
+      # get 95 apple free shares
+      {:ok, %{record: _result}} =
+        Trades.create(%{
+          from_asset_id: nil,
+          to_asset_id: apple.id,
+          from_qty: nil,
+          to_qty: 95,
+          to_asset_unit_cost: nil,
+          transacted_at: Date.utc_today(),
+          user_id: user.id
+        })
+
+      {:ok, %{record: _result}} =
+        Trades.create(%{
+          from_asset_id: apple.id,
+          to_asset_id: sgd.id,
+          from_qty: 95,
+          to_qty: 190,
+          to_asset_unit_cost: 2,
+          transacted_at: Date.utc_today(),
+          user_id: user.id
+        })
+
+      all_latest = Repo.all(Ledger |> where([l], l.latest == true))
+
+      apple_latest = all_latest |> Enum.find(&(&1.asset_id == apple.id))
+      sgd_latest = all_latest |> Enum.find(&(&1.asset_id == sgd.id))
+
+      assert sgd_latest.weighted_average_cost == Decimal.new("1")
+      assert sgd_latest.inventory_qty == Decimal.new("190")
+      assert sgd_latest.inventory_cost == Decimal.new("190")
+
+      assert apple_latest.weighted_average_cost != Decimal.new("1.4")
+      assert apple_latest.inventory_qty == Decimal.new("0")
+      assert apple_latest.inventory_cost == Decimal.new("0")
+    end
   end
 
   describe "all_latest" do
