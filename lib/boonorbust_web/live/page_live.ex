@@ -47,6 +47,7 @@ defmodule BoonorbustWeb.PageLive do
           <p class="text-slate-400"><%= ledger.asset.code %></p>
         </:col>
         <:col :let={ledger} label="Profit %"><%= ledger.profit_percent %>%</:col>
+        <:col :let={ledger} label="Proportion %"><%= ledger.latest_proportion %>%</:col>
       </.table>
     <% end %>
     """

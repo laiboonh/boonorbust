@@ -198,45 +198,62 @@ defmodule Boonorbust.Ledgers do
     usdsgd = exchange_rate("usdsgd")
     hkdsgd = exchange_rate("hkdsgd")
 
-    Ledger
-    |> join(:inner, [l], t in assoc(l, :trade))
-    |> where([l, t], t.user_id == ^user_id and l.latest == true and l.inventory_qty != 0)
-    |> preload(:asset)
-    |> Repo.all()
+    latest =
+      Ledger
+      |> join(:inner, [l], t in assoc(l, :trade))
+      |> where([l, t], t.user_id == ^user_id and l.latest == true and l.inventory_qty != 0)
+      |> preload(:asset)
+      |> Repo.all()
+      |> Enum.map(fn ledger ->
+        latest_price = latest_price(root_asset, ledger.asset.code)
+
+        latest_price =
+          cond do
+            ledger.asset.code |> String.contains?("NYSE") or
+              ledger.asset.code |> String.contains?("NASDAQ") or
+              ledger.asset.code |> String.contains?("SGX:H78") or
+                ledger.asset.code |> String.contains?("COMMODITY") ->
+              latest_price |> Decimal.mult(usdsgd)
+
+            ledger.asset.code |> String.contains?("HKEX") ->
+              latest_price |> Decimal.mult(hkdsgd)
+
+            true ->
+              latest_price
+          end
+
+        latest_value = Decimal.new(latest_price) |> Decimal.mult(ledger.inventory_qty)
+
+        profit_percent =
+          latest_value
+          |> Decimal.sub(ledger.inventory_cost)
+          |> Decimal.div(ledger.inventory_cost)
+          |> Decimal.mult(Decimal.new(100))
+          |> Decimal.round(2)
+
+        ledger
+        |> Map.put(:latest_price, latest_price)
+        |> Map.put(:latest_value, latest_value)
+        |> Map.put(:profit_percent, profit_percent)
+      end)
+      |> Enum.sort(fn %{profit_percent: pp1}, %{profit_percent: pp2} ->
+        Decimal.compare(pp1, pp2) == :lt
+      end)
+
+    total_value =
+      latest
+      |> Enum.reduce(Decimal.new(0), fn ledger, acc -> acc |> Decimal.add(ledger.latest_value) end)
+
+    latest
     |> Enum.map(fn ledger ->
-      latest_price = latest_price(root_asset, ledger.asset.code)
-
-      latest_price =
-        cond do
-          ledger.asset.code |> String.contains?("NYSE") or
-            ledger.asset.code |> String.contains?("NASDAQ") or
-            ledger.asset.code |> String.contains?("SGX:H78") or
-              ledger.asset.code |> String.contains?("COMMODITY") ->
-            latest_price |> Decimal.mult(usdsgd)
-
-          ledger.asset.code |> String.contains?("HKEX") ->
-            latest_price |> Decimal.mult(hkdsgd)
-
-          true ->
-            latest_price
-        end
-
-      latest_value = Decimal.new(latest_price) |> Decimal.mult(ledger.inventory_qty)
-
-      profit_percent =
-        latest_value
-        |> Decimal.sub(ledger.inventory_cost)
-        |> Decimal.div(ledger.inventory_cost)
+      ledger
+      |> Map.put(
+        :latest_proportion,
+        ledger.latest_value
+        |> Decimal.div(total_value)
         |> Decimal.mult(Decimal.new(100))
         |> Decimal.round(2)
-
-      ledger
-      |> Map.put(:latest_price, latest_price)
-      |> Map.put(:latest_value, latest_value)
-      |> Map.put(:profit_percent, profit_percent)
-    end)
-    |> Enum.sort(fn %{profit_percent: pp1}, %{profit_percent: pp2} ->
-      Decimal.compare(pp1, pp2) == :lt
+      )
     end)
   end
 
