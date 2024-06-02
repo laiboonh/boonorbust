@@ -507,7 +507,9 @@ defmodule BoonorbustWeb.CoreComponents do
         <caption class="caption-top underline decoration-solid text-lg"><%= @caption %></caption>
         <thead class="text-sm text-left leading-6 text-zinc-500">
           <tr>
-            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal"><%= col[:label] %></th>
+            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal">
+              <%= Phoenix.HTML.raw(col[:label]) %>
+            </th>
             <th :if={@action != []} class="relative p-0 pb-4">
               <span class="sr-only"><%= gettext("Actions") %></span>
             </th>

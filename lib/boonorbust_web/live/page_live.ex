@@ -46,8 +46,18 @@ defmodule BoonorbustWeb.PageLive do
           <%= ledger.asset.name %><br />
           <p class="text-slate-400"><%= ledger.asset.code %></p>
         </:col>
-        <:col :let={ledger} label="Profit %"><%= ledger.profit_percent %>%</:col>
-        <:col :let={ledger} label="Proportion %"><%= ledger.latest_proportion %>%</:col>
+        <:col
+          :let={ledger}
+          label="<span phx-click='sort' phx-value-sort_by='profit_percent'>Profit %</span>"
+        >
+          <%= ledger.profit_percent %>%
+        </:col>
+        <:col
+          :let={ledger}
+          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Proportion %</span>"
+        >
+          <%= ledger.latest_proportion %>%
+        </:col>
       </.table>
     <% end %>
     """
@@ -74,6 +84,8 @@ defmodule BoonorbustWeb.PageLive do
       |> assign(:profit_percent, nil)
       |> assign(:portfolio_svgs, nil)
       |> assign(:profit_svg, nil)
+      |> assign(:sort_by, :profit_percent)
+      |> assign(:asc, true)
 
     {:ok, socket}
   end
@@ -97,6 +109,26 @@ defmodule BoonorbustWeb.PageLive do
       |> assign(:profit_svg, Profits.all(user_id) |> profit_svg())
 
     {:noreply, socket}
+  end
+
+  def handle_event("sort", %{"sort_by" => sort_by}, socket) do
+    sort_by = sort_by |> String.to_atom()
+    latest_ledgers = socket.assigns.latest_ledgers
+    asc = !socket.assigns.asc
+
+    {:noreply,
+     socket
+     |> assign(
+       sort_by: sort_by,
+       asc: asc,
+       latest_ledgers:
+         latest_ledgers
+         |> Enum.sort(fn one, two ->
+           sort_by_value_1 = get_in(one, [Access.key!(sort_by)])
+           sort_by_value_2 = get_in(two, [Access.key!(sort_by)])
+           Decimal.compare(sort_by_value_1, sort_by_value_2) == if asc, do: :lt, else: :gt
+         end)
+     )}
   end
 
   defp portfolio_to_svg(portfolio) do
