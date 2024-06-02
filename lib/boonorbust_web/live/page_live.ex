@@ -41,8 +41,8 @@ defmodule BoonorbustWeb.PageLive do
     <% end %>
 
     <%= if @latest_ledgers do %>
-      <.table id="ledgers" rows={@latest_ledgers}>
-        <:col :let={ledger} label="Name">
+      <.table id="ledgers" rows={@latest_ledgers |> Enum.reject(&(&1.asset.root == true))}>
+        <:col :let={ledger} label="<span phx-click='sort' phx-value-sort_by='name'>Name</span>">
           <%= ledger.asset.name %><br />
           <p class="text-slate-400"><%= ledger.asset.code %></p>
         </:col>
@@ -121,14 +121,26 @@ defmodule BoonorbustWeb.PageLive do
      |> assign(
        sort_by: sort_by,
        asc: asc,
-       latest_ledgers:
-         latest_ledgers
-         |> Enum.sort(fn one, two ->
-           sort_by_value_1 = get_in(one, [Access.key!(sort_by)])
-           sort_by_value_2 = get_in(two, [Access.key!(sort_by)])
-           Decimal.compare(sort_by_value_1, sort_by_value_2) == if asc, do: :lt, else: :gt
-         end)
+       latest_ledgers: sort_latest_ledgers(latest_ledgers, sort_by, asc)
      )}
+  end
+
+  def sort_latest_ledgers(latest_ledgers, sort_by, asc) do
+    if sort_by == :name do
+      order = if asc, do: :asc, else: :desc
+
+      latest_ledgers
+      |> Enum.sort_by(& &1.asset.name, order)
+    else
+      order = if asc, do: :lt, else: :gt
+
+      latest_ledgers
+      |> Enum.sort(fn one, two ->
+        sort_by_value_1 = get_in(one, [Access.key!(sort_by)])
+        sort_by_value_2 = get_in(two, [Access.key!(sort_by)])
+        Decimal.compare(sort_by_value_1, sort_by_value_2) == order
+      end)
+    end
   end
 
   defp portfolio_to_svg(portfolio) do

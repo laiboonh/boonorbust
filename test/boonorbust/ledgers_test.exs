@@ -230,8 +230,11 @@ defmodule Boonorbust.LedgersTest do
          }}
       end)
 
-      # root asset ledger not includes in all latest
-      [] = Boonorbust.Ledgers.all_latest(user.id)
+      [sgd_latest_ledger] = Boonorbust.Ledgers.all_latest(user.id)
+
+      assert sgd_latest_ledger.latest_price == Decimal.new("1")
+      assert sgd_latest_ledger.latest_value == Decimal.new("95")
+      assert sgd_latest_ledger.profit_percent == Decimal.new("0.00")
     end
   end
 end
