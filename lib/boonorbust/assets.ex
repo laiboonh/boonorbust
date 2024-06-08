@@ -26,7 +26,7 @@ defmodule Boonorbust.Assets do
     |> Repo.update()
   end
 
-  @spec all(integer(), atom()) :: [Asset.t()]
+  @spec all(integer(), keyword()) :: [Asset.t()]
   def all(user_id, options \\ [order_by: :id, order: :desc]) do
     order_by_param = [{Keyword.get(options, :order), Keyword.get(options, :order_by)}]
 
