@@ -28,4 +28,16 @@ defmodule Boonorbust.AssetsTest do
       assert {:error, _asset} = Assets.create(%{name: "Foo", user_id: user.id})
     end
   end
+
+  describe "all" do
+    test "success" do
+      user = user_fixture()
+      assert {:ok, foo} = Assets.create(%{name: "foo", user_id: user.id})
+      assert {:ok, bar} = Assets.create(%{name: "bar", user_id: user.id})
+
+      assert Assets.all(user.id) == [bar, foo]
+
+      assert Assets.all(user.id, order_by: :name, order: :desc) == [foo, bar]
+    end
+  end
 end

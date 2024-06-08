@@ -41,7 +41,8 @@ defmodule BoonorbustWeb.Ledgers.LedgerLive do
     user_id = socket.assigns.current_user.id
 
     asset_options =
-      Boonorbust.Assets.all(user_id, :name) |> Enum.map(fn asset -> {asset.name, asset.id} end)
+      Boonorbust.Assets.all(user_id, order_by: :name, order: :asc)
+      |> Enum.map(fn asset -> {asset.name, asset.id} end)
 
     {_asset_name, asset_id} = asset_options |> List.first()
 

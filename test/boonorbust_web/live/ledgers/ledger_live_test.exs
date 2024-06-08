@@ -32,6 +32,22 @@ defmodule BoonorbustWeb.Ledgers.LedgerLiveTest do
         |> Floki.find("#ledgers > tr")
 
       # inventory qty
+      assert rows |> find_in_table(1, 6) =~ "-105"
+
+      # inventory cost
+      assert rows |> find_in_table(1, 8) =~ "105"
+
+      # weighted average cost
+      assert rows |> find_in_table(1, 7) =~ "1"
+
+      rows =
+        lv
+        |> element("form")
+        |> render_change(%{asset_id: usd.id})
+        |> Floki.parse_document!()
+        |> Floki.find("#ledgers > tr")
+
+      # inventory qty
       assert rows |> find_in_table(1, 6) =~ "75"
 
       # inventory cost
@@ -39,22 +55,6 @@ defmodule BoonorbustWeb.Ledgers.LedgerLiveTest do
 
       # weighted average cost
       assert rows |> find_in_table(1, 7) =~ "1.4"
-
-      rows =
-        lv
-        |> element("form")
-        |> render_change(%{asset_id: sgd.id})
-        |> Floki.parse_document!()
-        |> Floki.find("#ledgers > tr")
-
-      # inventory qty
-      assert rows |> find_in_table(1, 6) =~ "-105"
-
-      # inventory cost
-      assert rows |> find_in_table(1, 8) =~ "-105"
-
-      # weighted average cost
-      assert rows |> find_in_table(1, 7) =~ "1"
     end
   end
 

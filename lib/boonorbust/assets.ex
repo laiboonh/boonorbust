@@ -27,11 +27,13 @@ defmodule Boonorbust.Assets do
   end
 
   @spec all(integer(), atom()) :: [Asset.t()]
-  def all(user_id, order_by \\ :inserted_at) do
+  def all(user_id, options \\ [order_by: :id, order: :desc]) do
+    order_by_param = [{Keyword.get(options, :order), Keyword.get(options, :order_by)}]
+
     Asset
     |> where([a], a.user_id == ^user_id)
     |> preload([a], :tags)
-    |> order_by(desc: ^order_by)
+    |> order_by(^order_by_param)
     |> Repo.all()
   end
 

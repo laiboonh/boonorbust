@@ -8,7 +8,7 @@ defmodule Boonorbust.Assets.Asset do
   schema "assets" do
     field :name, :string
     field :code, :string
-    field :root, :boolean
+    field :root, :boolean, default: false
     belongs_to :user, Boonorbust.Accounts.User
     many_to_many :tags, Boonorbust.Tags.Tag, join_through: "assets_tags", on_replace: :delete
     timestamps(type: :utc_datetime)
