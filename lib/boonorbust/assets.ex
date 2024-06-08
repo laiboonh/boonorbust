@@ -26,12 +26,12 @@ defmodule Boonorbust.Assets do
     |> Repo.update()
   end
 
-  @spec all(integer()) :: [Asset.t()]
-  def all(user_id) do
+  @spec all(integer(), atom()) :: [Asset.t()]
+  def all(user_id, order_by \\ :inserted_at) do
     Asset
     |> where([a], a.user_id == ^user_id)
     |> preload([a], :tags)
-    |> order_by(desc: :inserted_at)
+    |> order_by(desc: ^order_by)
     |> Repo.all()
   end
 

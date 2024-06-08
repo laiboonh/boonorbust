@@ -118,7 +118,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
   defp asset_options(user_id) do
     [
       {"-", nil}
-      | Boonorbust.Assets.all(user_id) |> Enum.map(fn asset -> {asset.name, asset.id} end)
+      | Boonorbust.Assets.all(user_id, :name) |> Enum.map(fn asset -> {asset.name, asset.id} end)
     ]
   end
 
