@@ -19,7 +19,7 @@ defmodule BoonorbustWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import BoonorbustWeb.Gettext
+  use Gettext, backend: BoonorbustWeb.Gettext
 
   attr :text, :string, default: ""
 

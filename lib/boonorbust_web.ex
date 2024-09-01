@@ -43,7 +43,7 @@ defmodule BoonorbustWeb do
         layouts: [html: BoonorbustWeb.Layouts]
 
       import Plug.Conn
-      import BoonorbustWeb.Gettext
+      use Gettext, backend: BoonorbustWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -85,7 +85,7 @@ defmodule BoonorbustWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import BoonorbustWeb.CoreComponents
-      import BoonorbustWeb.Gettext
+      use Gettext, backend: BoonorbustWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
