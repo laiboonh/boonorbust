@@ -1,6 +1,6 @@
 defmodule Boonorbust.Http do
-  def get(url) do
-    http_impl().get(url)
+  def get(url, headers \\ []) do
+    http_impl().get(url, headers)
   end
 
   defp http_impl do

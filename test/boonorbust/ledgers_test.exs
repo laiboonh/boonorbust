@@ -221,7 +221,7 @@ defmodule Boonorbust.LedgersTest do
       assert sgd_latest.weighted_average_cost == Decimal.new("1")
 
       # Prevent test from calling actual endpoint
-      expect(HttpBehaviourMock, :get, 2, fn _url ->
+      expect(HttpBehaviourMock, :get, 2, fn _url, _headers ->
         {:ok,
          %Finch.Response{
            body: """

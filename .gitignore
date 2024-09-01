@@ -39,3 +39,4 @@ npm-debug.log
 /priv/plts/*.plt.hash
 
 .iex.exs
+.envrc

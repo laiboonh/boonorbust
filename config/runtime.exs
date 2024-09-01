@@ -20,6 +20,8 @@ if System.get_env("PHX_SERVER") do
   config :boonorbust, BoonorbustWeb.Endpoint, server: true
 end
 
+config :boonorbust, :exchange_rate_api_key, System.get_env("EXCHANGE_RATE_API_KEY")
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
