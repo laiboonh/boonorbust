@@ -4,7 +4,7 @@ defmodule Boonorbust.Dividends do
   currency, amount, ex_date, payable_date, local_currency_amount, exchange_rate_used
   """
 
-  def get_dividend_history(asset_code) do
+  def get_dividend_history_hkex(asset_code) do
     {:ok, %Finch.Response{status: 200, body: body}} =
       Boonorbust.Http.get(
         "https://www.etnet.com.hk/www/eng/stocks/realtime/quote_dividend.php?code=#{asset_code}"

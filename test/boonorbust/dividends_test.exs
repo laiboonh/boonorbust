@@ -16,7 +16,7 @@ defmodule Boonorbust.DividendsTest do
          }}
       end)
 
-      assert Boonorbust.Dividends.get_dividend_history("9988") == [
+      assert Boonorbust.Dividends.get_dividend_history_hkex("9988") == [
                ["USD", 0.125, ~D[2023-12-20], ~D[2024-01-11]],
                ["USD", 0.0825, ~D[2024-06-12], ~D[2024-07-03]],
                ["USD", 0.125, ~D[2024-06-12], ~D[2024-07-03]]
