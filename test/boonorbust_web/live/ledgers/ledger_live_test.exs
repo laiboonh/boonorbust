@@ -11,8 +11,18 @@ defmodule BoonorbustWeb.Ledgers.LedgerLiveTest do
     test "success", %{conn: conn} do
       # spend 105 SGD (5 fee inclusive) to get 75 USD
       user = user_fixture()
-      assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
-      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
+
+      assert {:ok, usd} =
+               Assets.create(%{name: "usd", code: "usd", type: :currency, user_id: user.id})
+
+      assert {:ok, sgd} =
+               Assets.create(%{
+                 name: "sgd",
+                 code: "sgd",
+                 type: :currency,
+                 user_id: user.id,
+                 root: true
+               })
 
       {:ok, _result} =
         Trades.create(%{

@@ -8,6 +8,7 @@ defmodule Boonorbust.Assets.Asset do
   schema "assets" do
     field :name, :string
     field :code, :string
+    field :type, Ecto.Enum, values: [stock: 1, fund: 2, currency: 3, commodity: 4]
     field :root, :boolean, default: false
     belongs_to :user, Boonorbust.Accounts.User
     many_to_many :tags, Boonorbust.Tags.Tag, join_through: "assets_tags", on_replace: :delete
@@ -18,9 +19,9 @@ defmodule Boonorbust.Assets.Asset do
     tags = Tags.get_by_ids(Map.get(attrs, :tag_ids, []))
 
     asset
-    |> cast(attrs, [:name, :code, :root, :user_id])
+    |> cast(attrs, [:name, :code, :type, :root, :user_id])
     |> put_assoc(:tags, tags)
-    |> validate_required([:name, :user_id])
-    |> unique_constraint([:name, :user_id])
+    |> validate_required([:name, :code, :type, :user_id])
+    |> unique_constraint([:code, :type, :user_id])
   end
 end

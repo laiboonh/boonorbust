@@ -10,8 +10,17 @@ defmodule Boonorbust.TradesTest do
     test "success" do
       user = user_fixture()
 
-      assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
-      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
+      assert {:ok, usd} =
+               Assets.create(%{name: "usd", code: "usd", type: :currency, user_id: user.id})
+
+      assert {:ok, sgd} =
+               Assets.create(%{
+                 name: "sgd",
+                 code: "sgd",
+                 type: :currency,
+                 user_id: user.id,
+                 root: true
+               })
 
       {:ok, _trade} =
         Trades.create(%{
@@ -38,9 +47,20 @@ defmodule Boonorbust.TradesTest do
     test "sorted by transacted_at and id" do
       user = user_fixture()
 
-      assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
-      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
-      assert {:ok, apple} = Assets.create(%{name: "apple", user_id: user.id})
+      assert {:ok, usd} =
+               Assets.create(%{name: "usd", code: "usd", type: :currency, user_id: user.id})
+
+      assert {:ok, sgd} =
+               Assets.create(%{
+                 name: "sgd",
+                 code: "sgd",
+                 type: :currency,
+                 user_id: user.id,
+                 root: true
+               })
+
+      assert {:ok, apple} =
+               Assets.create(%{name: "apple", code: "AAPL", type: :stock, user_id: user.id})
 
       {:ok, %{insert: trade_1}} =
         Trades.create(%{
@@ -72,8 +92,17 @@ defmodule Boonorbust.TradesTest do
     test "paging" do
       user = user_fixture()
 
-      assert {:ok, usd} = Assets.create(%{name: "usd", user_id: user.id})
-      assert {:ok, sgd} = Assets.create(%{name: "sgd", user_id: user.id, root: true})
+      assert {:ok, usd} =
+               Assets.create(%{name: "usd", code: "usd", type: :currency, user_id: user.id})
+
+      assert {:ok, sgd} =
+               Assets.create(%{
+                 name: "sgd",
+                 code: "sgd",
+                 type: :currency,
+                 user_id: user.id,
+                 root: true
+               })
 
       1..11
       |> Enum.each(fn num ->

@@ -14,6 +14,8 @@ defmodule Boonorbust.AssetsTest do
       assert {:ok, asset} =
                Assets.create(%{
                  name: "foo",
+                 code: "GOOG",
+                 type: :stock,
                  user_id: user.id,
                  tag_ids: [tag_1.id]
                })
@@ -21,19 +23,29 @@ defmodule Boonorbust.AssetsTest do
       assert asset.tags == [tag_1]
     end
 
-    test "creating assets of the same name (case insensitive) returns error" do
+    test "creating assets of the same code (case insensitive) and type returns error" do
       user = user_fixture()
 
-      assert {:ok, _asset} = Assets.create(%{name: "foo", user_id: user.id})
-      assert {:error, _asset} = Assets.create(%{name: "Foo", user_id: user.id})
+      assert {:ok, _asset} =
+               Assets.create(%{name: "Foo", code: "APPL", type: :stock, user_id: user.id})
+
+      assert {:ok, _asset} =
+               Assets.create(%{name: "Foo", code: "APPL", type: :commodity, user_id: user.id})
+
+      assert {:error, _asset} =
+               Assets.create(%{name: "Foo", code: "appl", type: :stock, user_id: user.id})
     end
   end
 
   describe "all" do
     test "success" do
       user = user_fixture()
-      assert {:ok, foo} = Assets.create(%{name: "foo", user_id: user.id})
-      assert {:ok, bar} = Assets.create(%{name: "bar", user_id: user.id})
+
+      assert {:ok, foo} =
+               Assets.create(%{name: "foo", code: "GOOG", type: :stock, user_id: user.id})
+
+      assert {:ok, bar} =
+               Assets.create(%{name: "bar", code: "AAPL", type: :stock, user_id: user.id})
 
       assert Assets.all(user.id) == [bar, foo]
 

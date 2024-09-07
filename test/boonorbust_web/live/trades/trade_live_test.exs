@@ -9,8 +9,12 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
   describe "Insert" do
     test "success", %{conn: conn} do
       user = user_fixture()
-      from_asset = asset_fixture(%{name: "SGD", user_id: user.id, root: true})
-      to_asset = asset_fixture(%{name: "USD", user_id: user.id, root: false})
+
+      from_asset =
+        asset_fixture(%{name: "SGD", code: "SGD", type: :currency, user_id: user.id, root: true})
+
+      to_asset =
+        asset_fixture(%{name: "USD", code: "USD", type: :currency, user_id: user.id, root: false})
 
       {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/trades/new")
 
@@ -36,8 +40,12 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
   describe "Update" do
     test "success", %{conn: conn} do
       user = user_fixture()
-      from_asset = asset_fixture(%{name: "SGD", user_id: user.id, root: true})
-      to_asset = asset_fixture(%{name: "USD", user_id: user.id, root: false})
+
+      from_asset =
+        asset_fixture(%{name: "SGD", code: "SGD", type: :currency, user_id: user.id, root: true})
+
+      to_asset =
+        asset_fixture(%{name: "USD", code: "USD", type: :currency, user_id: user.id, root: false})
 
       {:ok, %{insert: trade}} =
         Trades.create(%{
@@ -67,8 +75,12 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
   describe "Delete" do
     test "success", %{conn: conn} do
       user = user_fixture()
-      from_asset = asset_fixture(%{name: "SGD", user_id: user.id, root: true})
-      to_asset = asset_fixture(%{name: "USD", user_id: user.id, root: false})
+
+      from_asset =
+        asset_fixture(%{name: "SGD", code: "SGD", type: :currency, user_id: user.id, root: true})
+
+      to_asset =
+        asset_fixture(%{name: "USD", code: "USD", type: :currency, user_id: user.id, root: false})
 
       {:ok, %{insert: trade}} =
         Trades.create(%{
