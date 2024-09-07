@@ -39,6 +39,13 @@ defmodule BoonorbustWeb.Trades.TradeLive do
           />
           <.input field={@trade_form[:transacted_at]} label="Transacted At" type="date" required />
           <.input field={@trade_form[:note]} label="Note" />
+          <%= if @action == "insert" do %>
+            <.input
+              field={@trade_form[:auto_create]}
+              type="checkbox"
+              label="Auto Create Local Currency to From Asset Trade"
+            />
+          <% end %>
           <:actions>
             <.button phx-disable-with="..."><%= @action |> String.capitalize() %></.button>
           </:actions>
@@ -217,21 +224,31 @@ defmodule BoonorbustWeb.Trades.TradeLive do
         "user_id" => user_id,
         "to_asset_unit_cost" => to_asset_unit_cost,
         "transacted_at" => transacted_at,
-        "note" => note
+        "note" => note,
+        "auto_create" => auto_create
       }
     } = params
 
     socket =
-      case Trades.create(%{
-             from_asset_id: from_asset_id,
-             from_qty: from_qty,
-             to_asset_id: to_asset_id,
-             to_qty: to_qty,
-             user_id: user_id,
-             to_asset_unit_cost: to_asset_unit_cost,
-             transacted_at: transacted_at,
-             note: note
-           }) do
+      case Trades.create(
+             %{
+               from_asset_id:
+                 if from_asset_id != nil do
+                   String.to_integer(from_asset_id)
+                 end,
+               from_qty: from_qty,
+               to_asset_id:
+                 if to_asset_id != nil do
+                   String.to_integer(to_asset_id)
+                 end,
+               to_qty: to_qty,
+               user_id: user_id,
+               to_asset_unit_cost: to_asset_unit_cost,
+               transacted_at: transacted_at,
+               note: note
+             },
+             auto_create
+           ) do
         {:ok, %{insert: trade}} ->
           socket
           |> refresh_table(params)

@@ -1,21 +1,75 @@
 defmodule Boonorbust.Trades do
   import Ecto.Query, warn: false
 
+  alias Boonorbust.Assets
+  alias Boonorbust.ExchangeRates
   alias Boonorbust.Ledgers
   alias Boonorbust.Repo
   alias Boonorbust.Trades.Trade
+  alias Ecto.Changeset
   alias Ecto.Multi
 
-  @spec create(%{atom => any()}) :: {:ok, any()} | {:error, any()} | Ecto.Multi.failure()
-  def create(attrs) do
-    Multi.new()
-    |> Multi.insert(
-      :insert,
-      %Trade{}
-      |> Trade.changeset(attrs)
-    )
-    |> Multi.run(:record, fn _repo, %{insert: trade} -> Ledgers.record(trade) end)
-    |> Repo.transaction()
+  @spec create(%{atom => any()}, boolean()) ::
+          {:ok, any()} | {:error, any()} | Ecto.Multi.failure()
+  def create(attrs, auto_create \\ false) do
+    multi =
+      if auto_create do
+        Multi.new()
+        |> Multi.run(:auto_create, fn _repo, _changes -> maybe_auto_create_trade(attrs) end)
+        |> Multi.insert(
+          :insert,
+          %Trade{}
+          |> Trade.changeset(attrs)
+        )
+        |> Multi.run(:record, fn _repo, %{insert: trade} -> Ledgers.record(trade) end)
+      else
+        Multi.new()
+        |> Multi.insert(
+          :insert,
+          %Trade{}
+          |> Trade.changeset(attrs)
+        )
+        |> Multi.run(:record, fn _repo, %{insert: trade} -> Ledgers.record(trade) end)
+      end
+
+    Repo.transaction(multi)
+  end
+
+  @spec maybe_auto_create_trade(map()) :: {:ok, Trade.t() | nil} | {:error, Changeset.t()}
+  defp maybe_auto_create_trade(%{
+         from_asset_id: from_asset_id,
+         from_qty: from_qty,
+         to_asset_id: to_asset_id,
+         user_id: user_id,
+         transacted_at: transacted_at
+       }) do
+    root_asset = Assets.root(user_id)
+    from_asset = Assets.get(from_asset_id, user_id)
+
+    if from_asset_id != root_asset.id && to_asset_id != root_asset.id &&
+         from_asset.type == :currency do
+      to_asset_id = from_asset_id
+      to_asset = from_asset
+
+      exchange_rate =
+        ExchangeRates.get_exchange_rate(root_asset.code, to_asset.code, transacted_at)
+
+      to_qty = from_qty
+
+      from_qty = Decimal.new(to_qty) |> Decimal.div(exchange_rate)
+
+      create(%{
+        from_asset_id: root_asset.id,
+        to_asset_id: to_asset_id,
+        from_qty: from_qty,
+        to_qty: to_qty,
+        to_asset_unit_cost: exchange_rate,
+        transacted_at: transacted_at,
+        user_id: user_id
+      })
+    else
+      {:ok, nil}
+    end
   end
 
   @spec get(integer(), integer()) :: Trade.t() | nil

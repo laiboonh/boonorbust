@@ -4,8 +4,11 @@ defmodule Boonorbust.ExchangeRates do
   alias Boonorbust.ExchangeRates.ExchangeRate
   alias Boonorbust.Repo
 
-  @spec get_exchange_rate(String.t(), String.t(), Date.t()) :: float()
+  @spec get_exchange_rate(String.t(), String.t(), Date.t()) :: Decimal.t()
   def get_exchange_rate(from_currency, to_currency, date) do
+    from_currency = from_currency |> String.upcase()
+    to_currency = to_currency |> String.upcase()
+
     exchange_rate =
       case get_exchange_rate_from_db(from_currency, to_currency, date) do
         nil -> get_exchange_rate_from_api(from_currency, to_currency, date)
