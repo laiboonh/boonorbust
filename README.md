@@ -7,7 +7,8 @@
 - exec ./boonorbust eval "Ecto.Migrator.run(Boonorbust.Repo, :down, to: copied_from_version_column)"
 
  # TODO
- - Introduce Google Sign In
- - Introduce Local Currency for User
- - Introduce Dividend Histories
- - Calculate dividends earned per asset
+- Introduce Google Sign In
+- Introduce Local Currency for User
+- Introduce Dividend Histories
+- Calculate dividends earned per asset
+- Introduce trading_currency to Assets

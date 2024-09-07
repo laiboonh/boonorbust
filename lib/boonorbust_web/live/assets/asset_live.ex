@@ -8,7 +8,8 @@ defmodule BoonorbustWeb.Assets.AssetLive do
     {"Stock", :stock},
     {"Fund", :fund},
     {"Currency", :currency},
-    {"Commodity", :commodity}
+    {"Commodity", :commodity},
+    {"Crypto", :crypto}
   ]
 
   def render(assigns) do

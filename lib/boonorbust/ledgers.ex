@@ -213,14 +213,14 @@ defmodule Boonorbust.Ledgers do
 
     latest
     |> Enum.map(fn ledger ->
-      latest_price = latest_price(root_asset, ledger.asset.code)
+      latest_price = latest_price(root_asset, ledger.asset)
 
       latest_price =
         cond do
           ledger.asset.code |> String.contains?("NYSE") or
             ledger.asset.code |> String.contains?("NASDAQ") or
             ledger.asset.code |> String.contains?("SGX:H78") or
-              ledger.asset.code |> String.contains?("COMMODITY") ->
+              ledger.asset.type == :commodity ->
             latest_price |> Decimal.mult(usdsgd)
 
           ledger.asset.code |> String.contains?("HKEX") ->
@@ -295,8 +295,8 @@ defmodule Boonorbust.Ledgers do
     |> Decimal.new()
   end
 
-  @spec latest_price(Asset.t(), binary()) :: Decimal.t()
-  defp latest_price(_root_asset, "COMMODITY." <> code) do
+  @spec latest_price(Asset.t(), Asset.t()) :: Decimal.t()
+  defp latest_price(_root_asset, %Asset{type: :commodity, code: code}) do
     {:ok, %Finch.Response{body: body}} =
       Finch.build(:get, "https://markets.ft.com/data/commodities/tearsheet/summary?c=#{code}")
       |> Finch.request(Boonorbust.Finch)
@@ -309,7 +309,7 @@ defmodule Boonorbust.Ledgers do
     |> Decimal.new()
   end
 
-  defp latest_price(_root_asset, "FUND." <> code) do
+  defp latest_price(_root_asset, %Asset{type: :fund, code: code}) do
     {:ok, %Finch.Response{body: body}} =
       Finch.build(:get, "https://markets.ft.com/data/funds/tearsheet/summary?s=#{code}:SGD")
       |> Finch.request(Boonorbust.Finch)
@@ -322,7 +322,7 @@ defmodule Boonorbust.Ledgers do
     |> Decimal.new()
   end
 
-  defp latest_price(_root_asset, "STOCK." <> code) do
+  defp latest_price(_root_asset, %Asset{type: :stock, code: code}) do
     {:ok, %Finch.Response{body: body, status: 200}} =
       Finch.build(:get, "https://www.investingnote.com/stocks/#{code}")
       |> Finch.request(Boonorbust.Finch)
@@ -334,7 +334,7 @@ defmodule Boonorbust.Ledgers do
     |> Decimal.new()
   end
 
-  defp latest_price(root_asset, "TOKEN." <> code) do
+  defp latest_price(root_asset, %Asset{type: :crypto, code: code}) do
     {:ok, %Finch.Response{body: body}} =
       Finch.build(
         :get,
@@ -348,7 +348,7 @@ defmodule Boonorbust.Ledgers do
     |> Decimal.new()
   end
 
-  defp latest_price(_root_asset, _code), do: "1" |> Decimal.new()
+  defp latest_price(_root_asset, %Asset{type: :currency}), do: "1" |> Decimal.new()
 
   @spec profit_percent(integer(), list(Ledger.t())) :: Decimal.t()
   def profit_percent(_user_id, []), do: Decimal.new(0)

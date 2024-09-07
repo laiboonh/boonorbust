@@ -8,7 +8,7 @@ defmodule Boonorbust.Assets.Asset do
   schema "assets" do
     field :name, :string
     field :code, :string
-    field :type, Ecto.Enum, values: [stock: 1, fund: 2, currency: 3, commodity: 4]
+    field :type, Ecto.Enum, values: [stock: 1, fund: 2, currency: 3, commodity: 4, crypto: 5]
     field :root, :boolean, default: false
     belongs_to :user, Boonorbust.Accounts.User
     many_to_many :tags, Boonorbust.Tags.Tag, join_through: "assets_tags", on_replace: :delete
