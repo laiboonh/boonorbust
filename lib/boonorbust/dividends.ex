@@ -87,7 +87,7 @@ defmodule Boonorbust.Dividends do
 
   @spec convert_details_string(binary()) :: {String.t(), float()}
   defp convert_details_string(input) do
-    [_, _, currency, amount] = input |> String.split(" ")
+    [_, _, currency, amount | _tail] = input |> String.replace(",", "") |> String.split(" ")
     {amount, ""} = amount |> Float.parse()
     {currency, amount}
   end
