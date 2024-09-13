@@ -4,6 +4,16 @@ defmodule Boonorbust.ExchangeRates do
   alias Boonorbust.ExchangeRates.ExchangeRate
   alias Boonorbust.Repo
 
+  @spec convert(binary(), binary(), Date.t(), Decimal.t()) :: %{
+          to_amount: Decimal.t(),
+          rate_used: Decimal.t()
+        }
+  def convert(from_currency, to_currency, date, from_amount) do
+    rate = get_exchange_rate(from_currency, to_currency, date)
+    to_amount = from_amount |> Decimal.mult(rate)
+    %{to_amount: to_amount, rate_used: rate}
+  end
+
   @spec get_exchange_rate(String.t(), String.t(), Date.t()) :: Decimal.t()
   def get_exchange_rate(from_currency, to_currency, date) do
     from_currency = from_currency |> String.upcase()

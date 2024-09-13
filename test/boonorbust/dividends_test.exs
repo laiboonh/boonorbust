@@ -1,10 +1,13 @@
 defmodule Boonorbust.DividendsTest do
   use Boonorbust.DataCase
 
+  import Boonorbust.AccountsFixtures
   import Mox
   setup :verify_on_exit!
 
-  describe "get_dividend_history" do
+  alias Boonorbust.Assets
+
+  describe "upsert_dividend_declarations" do
     test "success" do
       expect(HttpBehaviourMock, :get, fn _url, _headers ->
         {:ok,
@@ -16,11 +19,19 @@ defmodule Boonorbust.DividendsTest do
          }}
       end)
 
-      assert Boonorbust.Dividends.get_dividend_history_hkex("9988") == [
-               ["USD", 0.125, ~D[2023-12-20], ~D[2024-01-11]],
-               ["USD", 0.0825, ~D[2024-06-12], ~D[2024-07-03]],
-               ["USD", 0.125, ~D[2024-06-12], ~D[2024-07-03]]
-             ]
+      user = user_fixture()
+
+      assert {:ok, asset} =
+               Assets.create(%{
+                 name: "BABA",
+                 code: "HKEX:9988",
+                 type: :stock,
+                 user_id: user.id
+               })
+
+      assert Boonorbust.Dividends.upsert_dividend_declarations(asset) == {3, nil}
+
+      assert Boonorbust.Dividends.all(asset) |> length == 3
     end
   end
 end

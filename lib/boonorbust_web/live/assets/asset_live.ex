@@ -59,7 +59,10 @@ defmodule BoonorbustWeb.Assets.AssetLive do
         <:col :let={asset} label="Action">
           <.link patch={~p"/assets/#{asset.id}"}><.icon name="hero-pencil-square-solid" /></.link>
           <.link patch={~p"/assets/new"}><.icon name="hero-document-plus-solid" /></.link>
-          <span phx-click="delete" phx-value-id={asset.id}><.icon name="hero-trash-solid" /></span>
+          <.link phx-click="dividend" phx-value-id={asset.id}>
+            <.icon name="hero-currency-dollar-solid" />
+          </.link>
+          <.link phx-click="delete" phx-value-id={asset.id}><.icon name="hero-trash-solid" /></.link>
         </:col>
       </.table>
     <% end %>
@@ -234,5 +237,15 @@ defmodule BoonorbustWeb.Assets.AssetLive do
       end
 
     {:noreply, socket}
+  end
+
+  def handle_event("dividend", %{"id" => id}, socket) do
+    user_id = socket.assigns.current_user.id
+    asset = Assets.get(id, user_id)
+
+    {num_of_records, _} = Boonorbust.Dividends.upsert_dividend_declarations(asset)
+    info = "#{num_of_records} Dividend Declarations Saved"
+
+    {:noreply, socket |> put_flash(:info, info)}
   end
 end
