@@ -187,5 +187,42 @@ defmodule Boonorbust.TradesTest do
 
       assert Trades.all(user.id, %{page: 2, page_size: 10}).entries |> length() == 1
     end
+
+    test "filter" do
+      user = user_fixture()
+
+      assert {:ok, _usd} =
+               Assets.create(%{name: "usd", code: "usd", type: :currency, user_id: user.id})
+
+      assert {:ok, sgd} =
+               Assets.create(%{
+                 name: "sgd",
+                 code: "sgd",
+                 type: :currency,
+                 user_id: user.id,
+                 root: true
+               })
+
+      assert {:ok, baba} =
+               Assets.create(%{
+                 name: "BABA",
+                 code: "HKEX:9988",
+                 type: :currency,
+                 user_id: user.id
+               })
+
+      Trades.create(%{
+        from_asset_id: sgd.id,
+        to_asset_id: baba.id,
+        from_qty: 105,
+        to_qty: 75,
+        to_asset_unit_cost: 1.4,
+        transacted_at: Date.utc_today(),
+        user_id: user.id
+      })
+
+      assert Trades.all(user.id, %{filter: "ba"}).entries |> length() == 1
+      assert Trades.all(user.id, %{filter: "SG"}).entries |> length() == 1
+    end
   end
 end

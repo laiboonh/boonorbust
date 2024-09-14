@@ -2,6 +2,7 @@ defmodule Boonorbust.Trades do
   import Ecto.Query, warn: false
 
   alias Boonorbust.Assets
+  alias Boonorbust.Assets.Asset
   alias Boonorbust.ExchangeRates
   alias Boonorbust.Ledgers
   alias Boonorbust.Repo
@@ -88,10 +89,45 @@ defmodule Boonorbust.Trades do
 
   @spec all(integer(), %{atom() => any()}) :: Scrivener.Page.t()
   def all(user_id, attrs \\ %{page: 1, page_size: 1}) do
+    filter = Map.get(attrs, :filter)
+
+    filter_where_attrs =
+      if filter != nil do
+        %{
+          to_asset_name: filter,
+          from_asset_name: filter,
+          to_asset_code: filter,
+          from_asset_code: filter
+        }
+      else
+        nil
+      end
+
     Trade
-    |> where([a], a.user_id == ^user_id)
+    |> join(:inner, [t], fa in Asset, on: t.from_asset_id == fa.id)
+    |> join(:inner, [t, fa], ta in Asset, on: t.to_asset_id == ta.id)
+    |> where([t, fa, ta], t.user_id == ^user_id)
+    |> where([t, fa, ta], ^filter_where(filter_where_attrs))
     |> order_by(desc: :transacted_at)
     |> Repo.paginate(attrs)
+  end
+
+  def filter_where(nil), do: dynamic(true)
+
+  def filter_where(attrs) do
+    Enum.reduce(attrs, dynamic(false), fn
+      {:to_asset_name, value}, dynamic ->
+        dynamic([t, fa, ta], ^dynamic or ilike(ta.name, ^"%#{value}%"))
+
+      {:from_asset_name, value}, dynamic ->
+        dynamic([t, fa, ta], ^dynamic or ilike(fa.name, ^"%#{value}%"))
+
+      {:to_asset_code, value}, dynamic ->
+        dynamic([t, fa, ta], ^dynamic or ilike(ta.code, ^"%#{value}%"))
+
+      {:from_asset_code, value}, dynamic ->
+        dynamic([t, fa, ta], ^dynamic or ilike(fa.code, ^"%#{value}%"))
+    end)
   end
 
   @spec all_asc_trasacted_at(integer()) :: [Trade.t()]

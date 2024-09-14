@@ -53,6 +53,19 @@ defmodule BoonorbustWeb.Trades.TradeLive do
       </div>
     </div>
 
+    <div class="space-y-12 divide-y">
+      <div>
+        <.simple_form for={@filter_form}>
+          <.input
+            phx-change="filter_changed"
+            label="Filter"
+            field={@filter_form[:filter]}
+            phx-debounce="2000"
+          />
+        </.simple_form>
+      </div>
+    </div>
+
     <%= if @trades != nil do %>
       <.table id="trades" rows={@trades}>
         <:col :let={trade} label="Id"><%= trade.id %></:col>
@@ -115,64 +128,6 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     """
   end
 
-  defp asset_name(asset_options, id) do
-    {asset_name, _} =
-      asset_options |> Enum.find(fn {_asset_name, asset_id} -> asset_id == id end)
-
-    asset_name
-  end
-
-  defp asset_options(user_id) do
-    [
-      {"-", nil}
-      | Boonorbust.Assets.all(user_id, order_by: :name, order: :asc)
-        |> Enum.map(fn asset -> {asset.name, asset.id} end)
-    ]
-  end
-
-  def refresh_table(socket, params) do
-    user_id = socket.assigns.current_user.id
-
-    result =
-      Trades.all(user_id, %{
-        page: Map.get(params, "page", 1),
-        page_size: Map.get(params, "page_size", @page_size)
-      })
-
-    socket
-    |> assign(:trades, result.entries)
-    |> assign(:total_pages, result.total_pages)
-    |> assign(:page_number, result.page_number)
-    |> assign(:total_entries, result.total_entries)
-  end
-
-  def mount(%{"id" => id} = params, _session, socket) do
-    user_id = socket.assigns.current_user.id
-
-    socket =
-      case Trades.get(id, user_id) do
-        nil ->
-          trade_changeset = Trade.changeset(%Trade{}, %{})
-
-          socket
-          |> refresh_table(params)
-          |> assign(:action, "update")
-          |> assign(:trade_form, to_form(trade_changeset))
-          |> put_flash(:error, "Trade #{id} not found")
-
-        trade ->
-          trade_changeset = Trade.changeset(trade, %{})
-
-          socket
-          |> refresh_table(params)
-          |> assign(:action, "update")
-          |> assign(:trade_form, to_form(trade_changeset))
-          |> assign(:asset_options, asset_options(user_id))
-      end
-
-    {:ok, socket}
-  end
-
   def mount(params, _session, socket) do
     user_id = socket.assigns.current_user.id
 
@@ -183,6 +138,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
       |> refresh_table(params)
       |> assign(:action, "insert")
       |> assign(:trade_form, to_form(trade_changeset))
+      |> assign(:filter_form, to_form(%{}))
       |> assign(:asset_options, asset_options(user_id))
 
     {:ok, socket}
@@ -190,24 +146,32 @@ defmodule BoonorbustWeb.Trades.TradeLive do
 
   def handle_params(%{"id" => id} = params, _uri, socket) do
     user_id = socket.assigns.current_user.id
-    trade = Trades.get(id, user_id)
-    trade_changeset = Trade.changeset(trade, %{})
 
     socket =
-      socket
-      |> refresh_table(params)
-      |> assign(:action, "update")
-      |> assign(:trade_form, to_form(trade_changeset))
+      case Trades.get(id, user_id) do
+        nil ->
+          socket
+          |> refresh_table(params)
+          |> assign(:action, "update")
+          |> put_flash(:error, "Trade #{id} not found")
+
+        trade ->
+          socket
+          |> refresh_table(params)
+          |> assign(:action, "update")
+          |> assign(:trade_form, to_form(Trade.changeset(trade, %{})))
+      end
 
     {:noreply, socket}
   end
 
-  def handle_params(params, _uri, socket) do
+  # For `/trades/new` where is is no params
+  def handle_params(%{}, _uri, socket) do
     user_id = socket.assigns.current_user.id
 
     socket =
       socket
-      |> refresh_table(params)
+      |> refresh_table(%{})
       |> assign(:action, "insert")
       |> assign(:trade_form, to_form(Trade.changeset(%Trade{}, %{user_id: user_id})))
 
@@ -322,5 +286,41 @@ defmodule BoonorbustWeb.Trades.TradeLive do
       end
 
     {:noreply, socket}
+  end
+
+  def handle_event("filter_changed", %{"filter" => filter}, socket) do
+    {:noreply, socket |> refresh_table(%{"filter" => filter})}
+  end
+
+  defp asset_name(asset_options, id) do
+    {asset_name, _} =
+      asset_options |> Enum.find(fn {_asset_name, asset_id} -> asset_id == id end)
+
+    asset_name
+  end
+
+  defp asset_options(user_id) do
+    [
+      {"-", nil}
+      | Boonorbust.Assets.all(user_id, order_by: :name, order: :asc)
+        |> Enum.map(fn asset -> {asset.name, asset.id} end)
+    ]
+  end
+
+  defp refresh_table(socket, params) do
+    user_id = socket.assigns.current_user.id
+
+    result =
+      Trades.all(user_id, %{
+        page: Map.get(params, "page", 1),
+        page_size: Map.get(params, "page_size", @page_size),
+        filter: Map.get(params, "filter")
+      })
+
+    socket
+    |> assign(:trades, result.entries)
+    |> assign(:total_pages, result.total_pages)
+    |> assign(:page_number, result.page_number)
+    |> assign(:total_entries, result.total_entries)
   end
 end
