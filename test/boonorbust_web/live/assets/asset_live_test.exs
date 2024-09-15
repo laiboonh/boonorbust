@@ -8,7 +8,7 @@ defmodule BoonorbustWeb.Assets.AssetLiveTest do
   describe "Insert" do
     test "renders errors for creating assets with same name (case insensitive)", %{conn: conn} do
       user = user_fixture()
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/assets/new")
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/assets")
 
       result =
         lv
@@ -19,7 +19,7 @@ defmodule BoonorbustWeb.Assets.AssetLiveTest do
 
       assert result =~ "Asset foo Inserted"
 
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/assets/new")
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/assets")
 
       result =
         lv
@@ -56,7 +56,7 @@ defmodule BoonorbustWeb.Assets.AssetLiveTest do
   describe "Delete" do
     test "success", %{conn: conn} do
       user = user_fixture()
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/assets/new")
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/assets")
 
       result =
         lv

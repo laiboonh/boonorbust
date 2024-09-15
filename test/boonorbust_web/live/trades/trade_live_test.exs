@@ -16,7 +16,7 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
       to_asset =
         asset_fixture(%{name: "USD", code: "USD", type: :currency, user_id: user.id, root: false})
 
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/trades/new")
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/trades")
 
       result =
         lv
@@ -92,7 +92,7 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
           "transacted_at" => "2024-03-15"
         })
 
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/trades/new")
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/trades")
 
       assert lv |> element(~s{[phx-click="delete"]}) |> render_click() =~
                "Trade #{trade.id} Deleted"

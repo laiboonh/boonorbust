@@ -8,7 +8,7 @@ defmodule BoonorbustWeb.Portfolios.PortfolioLiveTest do
   describe "Insert" do
     test "renders errors for creating portfolios with same name (case insensitive)", %{conn: conn} do
       user = user_fixture()
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/portfolios/new")
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/portfolios")
 
       result =
         lv
@@ -19,7 +19,7 @@ defmodule BoonorbustWeb.Portfolios.PortfolioLiveTest do
 
       assert result =~ "Portfolio foo Inserted"
 
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/portfolios/new")
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/portfolios")
 
       result =
         lv
@@ -54,7 +54,7 @@ defmodule BoonorbustWeb.Portfolios.PortfolioLiveTest do
   describe "Delete" do
     test "success", %{conn: conn} do
       user = user_fixture()
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/portfolios/new")
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/portfolios")
 
       result =
         lv

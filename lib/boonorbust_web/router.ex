@@ -69,16 +69,16 @@ defmodule BoonorbustWeb.Router do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
 
-      live "/assets/new", Assets.AssetLive, :new
+      live "/assets", Assets.AssetLive, :new
       live "/assets/:id", Assets.AssetLive, :edit
 
-      live "/tags/new", Tags.TagLive, :new
+      live "/tags", Tags.TagLive, :new
       live "/tags/:id", Tags.TagLive, :edit
 
-      live "/portfolios/new", Portfolios.PortfolioLive, :new
+      live "/portfolios", Portfolios.PortfolioLive, :new
       live "/portfolios/:id", Portfolios.PortfolioLive, :edit
 
-      live "/trades/new", Trades.TradeLive, :new
+      live "/trades", Trades.TradeLive, :new
       live "/trades/:id", Trades.TradeLive, :edit
 
       live "/ledgers", Ledgers.LedgerLive, :new

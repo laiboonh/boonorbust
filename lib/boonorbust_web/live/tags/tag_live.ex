@@ -29,7 +29,7 @@ defmodule BoonorbustWeb.Tags.TagLive do
         <:col :let={tag} label="Name"><%= tag.name %></:col>
         <:col :let={tag} label="Action">
           <.link patch={~p"/tags/#{tag.id}"}><.icon name="hero-pencil-square-solid" /></.link>
-          <.link patch={~p"/tags/new"}><.icon name="hero-document-plus-solid" /></.link>
+          <.link patch={~p"/tags"}><.icon name="hero-document-plus-solid" /></.link>
           <span phx-click="delete" phx-value-id={tag.id}><.icon name="hero-trash-solid" /></span>
         </:col>
       </.table>

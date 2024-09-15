@@ -89,10 +89,10 @@ defmodule Boonorbust.Trades do
 
   @spec all(integer(), %{atom() => any()}) :: Scrivener.Page.t()
   def all(user_id, attrs \\ %{page: 1, page_size: 1}) do
-    filter = Map.get(attrs, :filter)
+    filter = Map.get(attrs, :filter, "")
 
     filter_where_attrs =
-      if filter != nil do
+      if filter != "" do
         %{
           to_asset_name: filter,
           from_asset_name: filter,
@@ -104,8 +104,8 @@ defmodule Boonorbust.Trades do
       end
 
     Trade
-    |> join(:inner, [t], fa in Asset, on: t.from_asset_id == fa.id)
-    |> join(:inner, [t, fa], ta in Asset, on: t.to_asset_id == ta.id)
+    |> join(:left, [t], fa in Asset, on: t.from_asset_id == fa.id)
+    |> join(:left, [t, fa], ta in Asset, on: t.to_asset_id == ta.id)
     |> where([t, fa, ta], t.user_id == ^user_id)
     |> where([t, fa, ta], ^filter_where(filter_where_attrs))
     |> order_by(desc: :transacted_at)

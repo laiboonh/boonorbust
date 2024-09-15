@@ -8,7 +8,7 @@ defmodule BoonorbustWeb.Tags.TagLiveTest do
   describe "Insert" do
     test "renders errors for creating tags with same name (case insensitive)", %{conn: conn} do
       user = user_fixture()
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/tags/new")
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/tags")
 
       result =
         lv
@@ -19,7 +19,7 @@ defmodule BoonorbustWeb.Tags.TagLiveTest do
 
       assert result =~ "Tag foo Inserted"
 
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/tags/new")
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/tags")
 
       result =
         lv
@@ -54,7 +54,7 @@ defmodule BoonorbustWeb.Tags.TagLiveTest do
   describe "Delete" do
     test "success", %{conn: conn} do
       user = user_fixture()
-      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/tags/new")
+      {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/tags")
 
       result =
         lv

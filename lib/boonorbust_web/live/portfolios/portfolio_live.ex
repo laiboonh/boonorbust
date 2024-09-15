@@ -40,7 +40,7 @@ defmodule BoonorbustWeb.Portfolios.PortfolioLive do
           <.link patch={~p"/portfolios/#{portfolio.id}"}>
             <.icon name="hero-pencil-square-solid" />
           </.link>
-          <.link patch={~p"/portfolios/new"}><.icon name="hero-document-plus-solid" /></.link>
+          <.link patch={~p"/portfolios"}><.icon name="hero-document-plus-solid" /></.link>
           <span phx-click="delete" phx-value-id={portfolio.id}>
             <.icon name="hero-trash-solid" />
           </span>

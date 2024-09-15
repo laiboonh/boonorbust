@@ -85,7 +85,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
         <:col :let={trade} label="Note"><%= trade.note %></:col>
         <:action :let={trade}>
           <.link patch={~p"/trades/#{trade.id}"}><.icon name="hero-pencil-square-solid" /></.link>
-          <.link patch={~p"/trades/new"}><.icon name="hero-document-plus-solid" /></.link>
+          <.link patch={~p"/trades"}><.icon name="hero-document-plus-solid" /></.link>
           <span phx-click="delete" phx-value-id={trade.id}><.icon name="hero-trash-solid" /></span>
         </:action>
       </.table>
@@ -94,7 +94,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     <div style="display: flex; flex-direction: row; padding: 2px;">
       <div>
         <%= if @page_number > 1 do %>
-          <.link patch={~p"/trades/new?page=#{@page_number - 1}"}>
+          <.link patch={~p"/trades?page=#{@page_number - 1}"}>
             <div class="flex gap-2 items-center ">
               Previous
             </div>
@@ -104,7 +104,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
 
       <div style="display: flex; flex-direction: row; padding: 2px;">
         <%= for idx <-  Enum.to_list(1..@total_pages) do %>
-          <.link patch={~p"/trades/new?page=#{idx}"}>
+          <.link patch={~p"/trades?filter=#{@filter}&page=#{idx}"}>
             <%= if @page_number == idx do %>
               <p style="border: 1px solid black; padding-left: 5px; padding-right: 5px;">
                 <%= idx %>
@@ -120,7 +120,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
 
       <div>
         <%= if @page_number < @total_pages do %>
-          <.link patch={~p"/trades/new?page=#{@page_number + 1}"}>
+          <.link patch={~p"/trades?filter=#{@filter}&page=#{@page_number + 1}"}>
             <div class="flex gap-2 items-center ">
               Next
             </div>
@@ -141,7 +141,8 @@ defmodule BoonorbustWeb.Trades.TradeLive do
       |> refresh_table(params)
       |> assign(:action, "insert")
       |> assign(:trade_form, to_form(trade_changeset))
-      |> assign(:filter_form, to_form(%{"filter" => "ba"}))
+      # For `/trades?filter=ba&page=1` so that we keep `filter` value in filter_form
+      |> assign(:filter_form, to_form(params))
       |> assign(:asset_options, asset_options(user_id))
 
     {:ok, socket}
@@ -168,11 +169,11 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     {:noreply, socket}
   end
 
-  # For `/trades/new` where is is no params
-  def handle_params(%{}, _uri, socket) do
+  # For `/trades?page`=1 where there are params
+  def handle_params(params, _uri, socket) do
     socket =
       socket
-      |> refresh_table(%{})
+      |> refresh_table(params)
       |> assign(:action, "insert")
       |> assign(
         :trade_form,
@@ -319,7 +320,13 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     [
       {"-", nil}
       | Boonorbust.Assets.all(user_id, order_by: :name, order: :asc)
-        |> Enum.map(fn asset -> {asset.name, asset.id} end)
+        |> Enum.map(fn asset ->
+          if asset.type == :stock do
+            {"#{asset.name} (#{asset.code})", asset.id}
+          else
+            {asset.name, asset.id}
+          end
+        end)
     ]
   end
 
@@ -338,6 +345,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     |> assign(:total_pages, result.total_pages)
     |> assign(:page_number, result.page_number)
     |> assign(:total_entries, result.total_entries)
+    |> assign(:filter, Map.get(params, "filter", ""))
   end
 
   defp prepare_error_message(errors) do

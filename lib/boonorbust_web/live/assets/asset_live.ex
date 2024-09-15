@@ -58,7 +58,7 @@ defmodule BoonorbustWeb.Assets.AssetLive do
         <:col :let={asset} label="Tags"><%= tags(asset.tags) %></:col>
         <:col :let={asset} label="Action">
           <.link patch={~p"/assets/#{asset.id}"}><.icon name="hero-pencil-square-solid" /></.link>
-          <.link patch={~p"/assets/new"}><.icon name="hero-document-plus-solid" /></.link>
+          <.link patch={~p"/assets"}><.icon name="hero-document-plus-solid" /></.link>
           <.link phx-click="dividend" phx-value-id={asset.id}>
             <.icon name="hero-currency-dollar-solid" />
           </.link>
