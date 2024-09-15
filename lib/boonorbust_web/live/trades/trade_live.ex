@@ -185,7 +185,12 @@ defmodule BoonorbustWeb.Trades.TradeLive do
 
   def handle_event("validate", %{"trade" => trade_params}, socket) do
     user_id = socket.assigns.current_user.id
-    changeset = Trade.changeset(%Trade{}, trade_params |> Map.put("user_id", user_id))
+
+    # we use assigns.trade_form.data because for edits, it will contain the id of the trade we are editing
+    trade = socket.assigns.trade_form.data
+
+    changeset = Trade.changeset(trade, trade_params |> Map.put("user_id", user_id))
+
     {:noreply, assign(socket, :trade_form, to_form(Map.put(changeset, :action, :validate)))}
   end
 
@@ -246,7 +251,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
   end
 
   def handle_event("update", params, socket) do
-    %{hidden: [id: id]} = socket.assigns.trade_form
+    trade_id = socket.assigns.trade_form.data.id
     user_id = socket.assigns.current_user.id
 
     %{
@@ -262,7 +267,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     } = params
 
     socket =
-      case Trades.update(id, user_id, %{
+      case Trades.update(trade_id, user_id, %{
              from_asset_id: from_asset_id,
              from_qty: from_qty,
              to_asset_id: to_asset_id,
