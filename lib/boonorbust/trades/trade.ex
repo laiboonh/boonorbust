@@ -10,7 +10,7 @@ defmodule Boonorbust.Trades.Trade do
     field :from_qty, :decimal
     field :to_qty, :decimal
     field :to_asset_unit_cost, :decimal
-    field :transacted_at, :date, autogenerate: {Date, :utc_today, []}
+    field :transacted_at, :date
     field :note, :string
     belongs_to :user, Boonorbust.Accounts.User
     timestamps(type: :utc_datetime)

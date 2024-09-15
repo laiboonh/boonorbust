@@ -98,13 +98,13 @@ defmodule Boonorbust.TradesTest do
       [sgd_ledger] = Ledgers.all(user.id, sgd.id)
 
       assert sgd_ledger.weighted_average_cost == Decimal.new("1")
-      assert sgd_ledger.qty == Decimal.new("-144.5408968143186342124173020")
+      assert sgd_ledger.qty == Decimal.new("-144.54")
 
       assert Ledgers.all(user.id, usd.id) |> length() == 2
 
       [apple_ledger] = Ledgers.all(user.id, apple.id)
 
-      assert apple_ledger.total_cost == Decimal.new("144.5408968143186342124173020")
+      assert apple_ledger.total_cost == Decimal.new("144.54")
       assert apple_ledger.qty == Decimal.new("75")
     end
   end

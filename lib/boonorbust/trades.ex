@@ -57,7 +57,7 @@ defmodule Boonorbust.Trades do
 
       to_qty = from_qty
 
-      from_qty = Decimal.new(to_qty) |> Decimal.div(exchange_rate)
+      from_qty = Boonorbust.Utils.divide(Decimal.new(to_qty), exchange_rate)
 
       create(%{
         from_asset_id: root_asset.id,

@@ -15,7 +15,11 @@ defmodule BoonorbustWeb.Trades.TradeLive do
 
     <div class="space-y-12 divide-y">
       <div>
-        <.simple_form for={@trade_form} id="trade_form" phx-submit={@action}>
+        <.simple_form for={@trade_form} id="trade_form" phx-submit={@action} phx-change="validate">
+          <.error :if={@trade_form.errors != []}>
+            <%= raw(prepare_error_message(@trade_form.errors)) %>
+          </.error>
+
           <.input
             field={@trade_form[:from_asset_id]}
             label="From Asset"
@@ -30,7 +34,6 @@ defmodule BoonorbustWeb.Trades.TradeLive do
             options={@asset_options}
           />
           <.input field={@trade_form[:to_qty]} label="To Quantity" type="number" step="0.00001" />
-          <.input field={@trade_form[:user_id]} label="User ID" required readonly />
           <.input
             field={@trade_form[:to_asset_unit_cost]}
             label="To Asset Unit Cost"
@@ -138,7 +141,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
       |> refresh_table(params)
       |> assign(:action, "insert")
       |> assign(:trade_form, to_form(trade_changeset))
-      |> assign(:filter_form, to_form(%{}))
+      |> assign(:filter_form, to_form(%{"filter" => "ba"}))
       |> assign(:asset_options, asset_options(user_id))
 
     {:ok, socket}
@@ -153,7 +156,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
           socket
           |> refresh_table(params)
           |> assign(:action, "update")
-          |> put_flash(:error, "Trade #{id} not found")
+          |> flash(:error, "Trade #{id} not found")
 
         trade ->
           socket
@@ -167,25 +170,33 @@ defmodule BoonorbustWeb.Trades.TradeLive do
 
   # For `/trades/new` where is is no params
   def handle_params(%{}, _uri, socket) do
-    user_id = socket.assigns.current_user.id
-
     socket =
       socket
       |> refresh_table(%{})
       |> assign(:action, "insert")
-      |> assign(:trade_form, to_form(Trade.changeset(%Trade{}, %{user_id: user_id})))
+      |> assign(
+        :trade_form,
+        to_form(Trade.changeset(%Trade{}, %{transacted_at: Date.utc_today()}))
+      )
 
     {:noreply, socket}
   end
 
+  def handle_event("validate", %{"trade" => trade_params}, socket) do
+    user_id = socket.assigns.current_user.id
+    changeset = Trade.changeset(%Trade{}, trade_params |> Map.put("user_id", user_id))
+    {:noreply, assign(socket, :trade_form, to_form(Map.put(changeset, :action, :validate)))}
+  end
+
   def handle_event("insert", params, socket) do
+    user_id = socket.assigns.current_user.id
+
     %{
       "trade" => %{
         "from_asset_id" => from_asset_id,
         "from_qty" => from_qty,
         "to_asset_id" => to_asset_id,
         "to_qty" => to_qty,
-        "user_id" => user_id,
         "to_asset_unit_cost" => to_asset_unit_cost,
         "transacted_at" => transacted_at,
         "note" => note,
@@ -197,12 +208,12 @@ defmodule BoonorbustWeb.Trades.TradeLive do
       case Trades.create(
              %{
                from_asset_id:
-                 if from_asset_id != nil do
+                 if !Boonorbust.Utils.empty_string?(from_asset_id) do
                    String.to_integer(from_asset_id)
                  end,
                from_qty: from_qty,
                to_asset_id:
-                 if to_asset_id != nil do
+                 if !Boonorbust.Utils.empty_string?(to_asset_id) do
                    String.to_integer(to_asset_id)
                  end,
                to_qty: to_qty,
@@ -216,13 +227,18 @@ defmodule BoonorbustWeb.Trades.TradeLive do
         {:ok, %{insert: trade}} ->
           socket
           |> refresh_table(params)
-          |> assign(:trade_form, to_form(Trade.changeset(%Trade{}, %{user_id: user_id})))
-          |> put_flash(:info, "Trade #{trade.id} Inserted. Ledger updated.")
+          |> assign(
+            :trade_form,
+            to_form(
+              Trade.changeset(%Trade{}, %{user_id: user_id, transacted_at: Date.utc_today()})
+            )
+          )
+          |> flash(:info, "Trade #{trade.id} Inserted. Ledger updated.")
 
-        {:error, changeset} ->
+        {:error, _failed_operation, changeset, _changes_so_far} ->
           socket
-          |> assign(:trade_form, to_form(Map.put(changeset, :action, :insert)))
-          |> put_flash(:error, "Trade Insertion Failed")
+          |> assign(:trade_form, to_form(changeset))
+          |> flash(:error, "Trade Insertion Failed")
       end
 
     {:noreply, socket}
@@ -230,6 +246,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
 
   def handle_event("update", params, socket) do
     %{hidden: [id: id]} = socket.assigns.trade_form
+    user_id = socket.assigns.current_user.id
 
     %{
       "trade" => %{
@@ -237,7 +254,6 @@ defmodule BoonorbustWeb.Trades.TradeLive do
         "from_qty" => from_qty,
         "to_asset_id" => to_asset_id,
         "to_qty" => to_qty,
-        "user_id" => user_id,
         "to_asset_unit_cost" => to_asset_unit_cost,
         "transacted_at" => transacted_at,
         "note" => note
@@ -260,7 +276,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
 
           socket
           |> refresh_table(params)
-          |> put_flash(:info, info)
+          |> flash(:info, info)
 
         {:error, changeset} ->
           assign(socket, :trade_form, to_form(Map.put(changeset, :action, :update)))
@@ -279,7 +295,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
 
           socket
           |> refresh_table(params)
-          |> put_flash(:info, info)
+          |> flash(:info, info)
 
         {:error, changeset} ->
           assign(socket, :trade_form, to_form(Map.put(changeset, :action, :delete)))
@@ -289,7 +305,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
   end
 
   def handle_event("filter_changed", %{"filter" => filter}, socket) do
-    {:noreply, socket |> refresh_table(%{"filter" => filter})}
+    {:noreply, refresh_table(socket, %{"filter" => filter})}
   end
 
   defp asset_name(asset_options, id) do
@@ -322,5 +338,14 @@ defmodule BoonorbustWeb.Trades.TradeLive do
     |> assign(:total_pages, result.total_pages)
     |> assign(:page_number, result.page_number)
     |> assign(:total_entries, result.total_entries)
+  end
+
+  defp prepare_error_message(errors) do
+    Enum.map_join(errors, "<br/>", fn {_, {message, _}} -> message end)
+  end
+
+  defp flash(socket, key, message) do
+    clear_flash(socket)
+    |> put_flash(key, message)
   end
 end

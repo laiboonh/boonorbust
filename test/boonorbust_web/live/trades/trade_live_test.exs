@@ -26,7 +26,6 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
             "from_qty" => 1,
             "to_asset_id" => to_asset.id,
             "to_qty" => 1,
-            "user_id" => user.id,
             "to_asset_unit_cost" => 1,
             "transacted_at" => "2024-03-15"
           }

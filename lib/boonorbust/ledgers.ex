@@ -115,7 +115,7 @@ defmodule Boonorbust.Ledgers do
     # - All other cases total_cost is 0
     total_cost = total_cost(sell_asset_latest_ledger, to_asset_id, root_asset, qty)
 
-    unit_cost = total_cost |> Decimal.div(qty)
+    unit_cost = Boonorbust.Utils.divide(total_cost, qty)
     latest_ledger = get_latest(to_asset_id)
 
     latest_inventory_qty =
@@ -132,7 +132,7 @@ defmodule Boonorbust.Ledgers do
 
     inventory_qty = latest_inventory_qty |> Decimal.add(qty)
     inventory_cost = latest_inventory_cost |> Decimal.add(total_cost)
-    weighted_average_cost = inventory_cost |> Decimal.div(inventory_qty)
+    weighted_average_cost = Boonorbust.Utils.divide(inventory_cost, inventory_qty)
 
     Multi.new()
     |> Multi.run(
@@ -235,7 +235,7 @@ defmodule Boonorbust.Ledgers do
       profit_percent =
         latest_value
         |> Decimal.sub(ledger.inventory_cost)
-        |> Decimal.div(ledger.inventory_cost)
+        |> Boonorbust.Utils.divide(ledger.inventory_cost)
         |> Decimal.mult(Decimal.new(100))
         |> Decimal.round(2)
 
@@ -264,7 +264,7 @@ defmodule Boonorbust.Ledgers do
           do: Decimal.new(0),
           else:
             ledger.latest_value
-            |> Decimal.div(total_value)
+            |> Boonorbust.Utils.divide(total_value)
             |> Decimal.mult(Decimal.new(100))
             |> Decimal.round(2)
 
@@ -376,7 +376,10 @@ defmodule Boonorbust.Ledgers do
         user_id: user_id
       })
 
-    profit |> Decimal.div(total_cost) |> Decimal.mult(Decimal.new(100)) |> Decimal.round(2)
+    profit
+    |> Boonorbust.Utils.divide(total_cost)
+    |> Decimal.mult(Decimal.new(100))
+    |> Decimal.round(2)
   end
 
   @spec portfolios(integer(), list(Ledger.t())) :: list(map())
@@ -399,7 +402,7 @@ defmodule Boonorbust.Ledgers do
     |> Enum.map(fn tag_value ->
       percentage =
         tag_value.value
-        |> Decimal.div(total_value)
+        |> Boonorbust.Utils.divide(total_value)
         |> Decimal.mult(Decimal.new(100))
         |> Decimal.round(2)
 
