@@ -10,7 +10,7 @@ defmodule Boonorbust.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      test_coverage: [summary: [threshold: 50]],
+      test_coverage: [summary: [threshold: 80]],
       dialyzer: [
         plt_local_path: "priv/plts/project.plt",
         plt_core_path: "priv/plts/core.plt"

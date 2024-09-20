@@ -1,20 +1,21 @@
 defmodule BoonorbustWeb.Trades.TradeLiveTest do
-  alias Boonorbust.Trades
   use BoonorbustWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
   import Boonorbust.AccountsFixtures
-  import Boonorbust.AssetsFixtures
+
+  alias Boonorbust.Assets
+  alias Boonorbust.Trades
 
   describe "Insert" do
     test "success", %{conn: conn} do
       user = user_fixture()
 
-      from_asset =
-        asset_fixture(%{name: "SGD", code: "SGD", type: :currency, user_id: user.id, root: true})
+      {:ok, from_asset} =
+        Assets.create(%{name: "SGD", code: "SGD", type: :currency, user_id: user.id, root: true})
 
-      to_asset =
-        asset_fixture(%{name: "USD", code: "USD", type: :currency, user_id: user.id, root: false})
+      {:ok, to_asset} =
+        Assets.create(%{name: "USD", code: "USD", type: :currency, user_id: user.id, root: false})
 
       {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/trades")
 
@@ -40,11 +41,11 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
     test "success", %{conn: conn} do
       user = user_fixture()
 
-      from_asset =
-        asset_fixture(%{name: "SGD", code: "SGD", type: :currency, user_id: user.id, root: true})
+      {:ok, from_asset} =
+        Assets.create(%{name: "SGD", code: "SGD", type: :currency, user_id: user.id, root: true})
 
-      to_asset =
-        asset_fixture(%{name: "USD", code: "USD", type: :currency, user_id: user.id, root: false})
+      {:ok, to_asset} =
+        Assets.create(%{name: "USD", code: "USD", type: :currency, user_id: user.id, root: false})
 
       {:ok, %{insert: trade}} =
         Trades.create(%{
@@ -75,11 +76,11 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
     test "success", %{conn: conn} do
       user = user_fixture()
 
-      from_asset =
-        asset_fixture(%{name: "SGD", code: "SGD", type: :currency, user_id: user.id, root: true})
+      {:ok, from_asset} =
+        Assets.create(%{name: "SGD", code: "SGD", type: :currency, user_id: user.id, root: true})
 
-      to_asset =
-        asset_fixture(%{name: "USD", code: "USD", type: :currency, user_id: user.id, root: false})
+      {:ok, to_asset} =
+        Assets.create(%{name: "USD", code: "USD", type: :currency, user_id: user.id, root: false})
 
       {:ok, %{insert: trade}} =
         Trades.create(%{

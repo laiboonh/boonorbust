@@ -11,22 +11,23 @@ defmodule Boonorbust.Utils do
   @spec month_as_integer(String.t()) :: integer()
   # credo:disable-for-next-line
   def month_as_integer(input) do
-    case input do
-      "Jan" -> 1
-      "Feb" -> 2
-      "Mar" -> 3
-      "Apr" -> 4
-      "May" -> 5
-      "Jun" -> 6
-      "Jul" -> 7
-      "Aug" -> 8
-      "Sep" -> 9
-      "Oct" -> 10
-      "Nov" -> 11
-      "Dec" -> 12
+    case input |> String.upcase() do
+      "JAN" -> 1
+      "FEB" -> 2
+      "MAR" -> 3
+      "APR" -> 4
+      "MAY" -> 5
+      "JUN" -> 6
+      "JUL" -> 7
+      "AUG" -> 8
+      "SEP" -> 9
+      "OCT" -> 10
+      "NOV" -> 11
+      "DEC" -> 12
     end
   end
 
+  @spec convert_to_date(String.t()) :: Date.t()
   def convert_to_date(input) do
     [day, month, year] = input |> String.split()
     month = month_as_integer(month)

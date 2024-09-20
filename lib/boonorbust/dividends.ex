@@ -9,13 +9,14 @@ defmodule Boonorbust.Dividends do
 
   import Ecto.Query
 
-  @spec all(Asset.t()) :: [DividendDeclaration.t()]
-  def all(asset) do
+  @spec all_declarations(Asset.t()) :: [DividendDeclaration.t()]
+  def all_declarations(asset) do
     asset_id = asset.id
     Repo.all(DividendDeclaration |> where([dd], dd.asset_id == ^asset_id))
   end
 
-  def find(asset_id, ex_date) do
+  @spec find_declarations(integer(), Date.t()) :: list(DividendDeclaration)
+  def find_declarations(asset_id, ex_date) do
     Repo.all(
       DividendDeclaration
       |> where([dd], dd.asset_id == ^asset_id and dd.ex_date == ^ex_date)
@@ -56,7 +57,7 @@ defmodule Boonorbust.Dividends do
     [_, _, _, _, ex_date, _, _] =
       content |> List.first() |> Floki.find("td") |> Enum.map(&Floki.text(&1))
 
-    if find(asset.id, Date.from_iso8601!(ex_date |> String.trim())) |> length() > 0 do
+    if find_declarations(asset.id, Date.from_iso8601!(ex_date |> String.trim())) |> length() > 0 do
       []
     else
       body
@@ -82,7 +83,7 @@ defmodule Boonorbust.Dividends do
     [_, _, _, _, ex_date, _, _] =
       content |> List.first() |> Floki.find("td") |> Enum.map(&Floki.text(&1))
 
-    if find(asset.id, Date.from_iso8601!(ex_date |> String.trim())) |> length() > 0 do
+    if find_declarations(asset.id, Date.from_iso8601!(ex_date |> String.trim())) |> length() > 0 do
       []
     else
       do_get_dividend_declarations_sgx(content, asset.id)
