@@ -35,8 +35,8 @@ defmodule Boonorbust.Dividends do
   defp get_dividend_declarations(%Asset{type: :stock} = asset) do
     cond do
       asset.code |> String.starts_with?("HKEX") -> get_dividend_declarations_hkex(asset)
-      asset.code |> String.starts_with?("NYSE") -> get_dividend_declarations_hkex(asset)
-      asset.code |> String.starts_with?("NASDAQ") -> get_dividend_declarations_hkex(asset)
+      asset.code |> String.starts_with?("NYSE") -> get_dividend_declarations_us(asset)
+      asset.code |> String.starts_with?("NASDAQ") -> get_dividend_declarations_us(asset)
       asset.code |> String.starts_with?("SGX") -> get_dividend_declarations_sgx(asset)
     end
   end
@@ -177,6 +177,35 @@ defmodule Boonorbust.Dividends do
         }
       end
     end
+  end
+
+  @spec get_dividend_declarations_us(Asset.t()) :: list(map())
+  defp get_dividend_declarations_us(asset) do
+    [_, code] = asset.code |> String.split(":")
+
+    {:ok, %Finch.Response{status: 200, body: body}} =
+      Boonorbust.Http.get(
+        "https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/#{code}?apikey=#{Application.get_env(:boonorbust, :fmp_api_key)}"
+      )
+
+    declarations = Jason.decode!(body)["historical"]
+
+    Enum.reduce(declarations, [], fn d, acc ->
+      if d["paymentDate"] == "" do
+        acc
+      else
+        [
+          %{
+            currency: "USD",
+            amount: d["dividend"],
+            ex_date: d["date"] |> Date.from_iso8601!(),
+            payable_date: d["paymentDate"] |> Date.from_iso8601!(),
+            asset_id: asset.id
+          }
+          | acc
+        ]
+      end
+    end)
   end
 
   @spec get_dividend_declarations_hkex(Asset.t()) :: list(map())

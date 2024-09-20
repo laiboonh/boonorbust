@@ -22,6 +22,8 @@ end
 
 config :boonorbust, :exchange_rate_api_key, System.get_env("EXCHANGE_RATE_API_KEY")
 
+config :boonorbust, :fmp_api_key, System.get_env("FMP_API_KEY")
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
