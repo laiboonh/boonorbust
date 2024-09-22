@@ -196,8 +196,7 @@ defmodule Boonorbust.Ledgers do
   @spec all(integer(), integer()) :: [Ledger.t()]
   def all(user_id, asset_id) do
     Ledger
-    |> join(:inner, [l], t in assoc(l, :trade))
-    |> where([l, t], t.user_id == ^user_id and l.asset_id == ^asset_id)
+    |> where([l], l.user_id == ^user_id and l.asset_id == ^asset_id)
     |> order_by(asc: :id)
     |> preload(:trade)
     |> Repo.all()
@@ -206,8 +205,7 @@ defmodule Boonorbust.Ledgers do
   @spec all_latest(integer()) :: [Ledger.t()]
   def all_latest(user_id) do
     Ledger
-    |> join(:inner, [l], t in assoc(l, :trade))
-    |> where([l, t], t.user_id == ^user_id and l.latest == true and l.inventory_qty != 0)
+    |> where([l], l.user_id == ^user_id and l.latest == true and l.inventory_qty != 0)
     |> preload(:asset)
     |> Repo.all()
     |> calculate_price_value_profit(user_id)
@@ -287,8 +285,7 @@ defmodule Boonorbust.Ledgers do
   @spec delete(integer()) :: {non_neg_integer(), nil | [term()]}
   def delete(user_id) do
     Ledger
-    |> join(:inner, [l], t in assoc(l, :trade))
-    |> where([l, t], t.user_id == ^user_id)
+    |> where([l], l.user_id == ^user_id)
     |> Repo.delete_all()
   end
 
