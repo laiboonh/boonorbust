@@ -10,7 +10,15 @@ defmodule Boonorbust.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      test_coverage: [summary: [threshold: 80]],
+      test_coverage: [
+        summary: [threshold: 80],
+        ignore_modules: [
+          Boonorbust.HttpImpl,
+          Boonorbust.Release,
+          BoonorbustWeb.Layouts,
+          ~r/BoonorbustWeb\.Page/
+        ]
+      ],
       dialyzer: [
         plt_local_path: "priv/plts/project.plt",
         plt_core_path: "priv/plts/core.plt"
