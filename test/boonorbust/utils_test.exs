@@ -4,7 +4,14 @@ defmodule Boonorbust.UtilsTest do
 
   describe "divide" do
     test "success" do
-      assert Utils.divide(Decimal.new("100"), Decimal.new("3")) == Decimal.new("33.33333")
+      assert Utils.divide(Decimal.new("100"), Decimal.new("3")) == Decimal.new("33.333333")
+    end
+  end
+
+  describe "multiply" do
+    test "success" do
+      a = Utils.divide(Decimal.new("100"), Decimal.new("3"))
+      assert Utils.multiply(a, a) == Decimal.new("1111.111089")
     end
   end
 

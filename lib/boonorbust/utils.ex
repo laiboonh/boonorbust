@@ -1,7 +1,14 @@
 defmodule Boonorbust.Utils do
+  @scale 6
+
   @spec divide(Decimal.t(), Decimal.t()) :: Decimal.t()
   def divide(one, two) do
-    one |> Decimal.div(two) |> Decimal.round(5)
+    one |> Decimal.div(two) |> Decimal.round(@scale)
+  end
+
+  @spec multiply(Decimal.t(), Decimal.t()) :: Decimal.t()
+  def multiply(one, two) do
+    one |> Decimal.mult(two) |> Decimal.round(@scale)
   end
 
   @spec empty_string?(String.t()) :: boolean()

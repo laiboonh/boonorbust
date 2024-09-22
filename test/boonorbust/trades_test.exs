@@ -37,11 +37,11 @@ defmodule Boonorbust.TradesTest do
 
       [usd_ledger] = Ledgers.all(user.id, usd.id)
       assert usd_ledger.inventory_qty == Decimal.new("75")
-      assert usd_ledger.inventory_cost == Decimal.new("105")
+      assert usd_ledger.inventory_cost == Decimal.new("105.000000")
 
       [usd_ledger] = Ledgers.all(user.id, sgd.id)
       assert usd_ledger.inventory_qty == Decimal.new("-105")
-      assert usd_ledger.inventory_cost == Decimal.new("-105")
+      assert usd_ledger.inventory_cost == Decimal.new("-105.000000")
     end
 
     test "success with auto_create trade" do
@@ -98,13 +98,13 @@ defmodule Boonorbust.TradesTest do
       [sgd_ledger] = Ledgers.all(user.id, sgd.id)
 
       assert sgd_ledger.weighted_average_cost == Decimal.new("1")
-      assert sgd_ledger.qty == Decimal.new("-144.54090")
+      assert sgd_ledger.qty == Decimal.new("-144.540897")
 
       assert Ledgers.all(user.id, usd.id) |> length() == 2
 
       [apple_ledger] = Ledgers.all(user.id, apple.id)
 
-      assert apple_ledger.total_cost == Decimal.new("144.54090")
+      assert apple_ledger.total_cost == Decimal.new("144.540900")
       assert apple_ledger.qty == Decimal.new("75")
     end
   end

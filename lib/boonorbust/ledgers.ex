@@ -10,6 +10,7 @@ defmodule Boonorbust.Ledgers do
   alias Boonorbust.Repo
   alias Boonorbust.Trades
   alias Boonorbust.Trades.Trade
+  alias Boonorbust.Utils
   alias Ecto.Multi
 
   @spec create(%{atom => any()}) :: {:ok, Ledger.t()} | {:error, Ecto.Changeset.t()}
@@ -62,10 +63,10 @@ defmodule Boonorbust.Ledgers do
       end
 
     unit_cost = latest_weighted_average_cost
-    total_cost = qty |> Decimal.mult(unit_cost)
+    total_cost = qty |> Utils.multiply(unit_cost)
     inventory_qty = latest_inventory_qty |> Decimal.add(qty)
     weighted_average_cost = latest_weighted_average_cost
-    inventory_cost = inventory_qty |> Decimal.mult(weighted_average_cost)
+    inventory_cost = inventory_qty |> Utils.multiply(weighted_average_cost)
 
     Multi.new()
     |> Multi.run(
@@ -221,22 +222,22 @@ defmodule Boonorbust.Ledgers do
             ledger.asset.code |> String.contains?("NASDAQ") or
             ledger.asset.code |> String.contains?("SGX:H78") or
               ledger.asset.type == :commodity ->
-            latest_price |> Decimal.mult(usdsgd)
+            latest_price |> Utils.multiply(usdsgd)
 
           ledger.asset.code |> String.contains?("HKEX") ->
-            latest_price |> Decimal.mult(hkdsgd)
+            latest_price |> Utils.multiply(hkdsgd)
 
           true ->
             latest_price
         end
 
-      latest_value = Decimal.new(latest_price) |> Decimal.mult(ledger.inventory_qty)
+      latest_value = Decimal.new(latest_price) |> Utils.multiply(ledger.inventory_qty)
 
       profit_percent =
         latest_value
         |> Decimal.sub(ledger.inventory_cost)
         |> Boonorbust.Utils.divide(ledger.inventory_cost)
-        |> Decimal.mult(Decimal.new(100))
+        |> Utils.multiply(Decimal.new(100))
         |> Decimal.round(2)
 
       ledger
@@ -265,7 +266,7 @@ defmodule Boonorbust.Ledgers do
           else:
             ledger.latest_value
             |> Boonorbust.Utils.divide(total_value)
-            |> Decimal.mult(Decimal.new(100))
+            |> Utils.multiply(Decimal.new(100))
             |> Decimal.round(2)
 
       ledger |> Map.put(:latest_proportion, latest_proportion)
@@ -378,7 +379,7 @@ defmodule Boonorbust.Ledgers do
 
     profit
     |> Boonorbust.Utils.divide(total_cost)
-    |> Decimal.mult(Decimal.new(100))
+    |> Utils.multiply(Decimal.new(100))
     |> Decimal.round(2)
   end
 
@@ -403,7 +404,7 @@ defmodule Boonorbust.Ledgers do
       percentage =
         tag_value.value
         |> Boonorbust.Utils.divide(total_value)
-        |> Decimal.mult(Decimal.new(100))
+        |> Utils.multiply(Decimal.new(100))
         |> Decimal.round(2)
 
       tag_value |> Map.put_new(:percentage, percentage)

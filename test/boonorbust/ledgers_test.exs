@@ -40,13 +40,18 @@ defmodule Boonorbust.LedgersTest do
         })
 
       assert result.insert_sell_asset_latest_ledger.inventory_qty == Decimal.new(-105)
-      assert result.insert_sell_asset_latest_ledger.inventory_cost == Decimal.new(-105)
+
+      assert result.insert_sell_asset_latest_ledger.inventory_cost ==
+               Decimal.new("-105.000000")
+
       assert result.insert_sell_asset_latest_ledger.weighted_average_cost == Decimal.new(1)
       assert result.update_sell_asset_latest_flag == nil
       assert result.update_buy_asset_latest_flag == nil
       assert result.insert_buy_asset_latest_ledger.inventory_qty == Decimal.new(75)
-      assert result.insert_buy_asset_latest_ledger.inventory_cost == Decimal.new(105)
-      assert result.insert_buy_asset_latest_ledger.weighted_average_cost == Decimal.new("1.40000")
+      assert result.insert_buy_asset_latest_ledger.inventory_cost == Decimal.new("105.000000")
+
+      assert result.insert_buy_asset_latest_ledger.weighted_average_cost ==
+               Decimal.new("1.400000")
     end
 
     test "success with fees (from something to nothing)" do
@@ -77,11 +82,10 @@ defmodule Boonorbust.LedgersTest do
       [sgd_latest] = Repo.all(Ledger)
 
       assert sgd_latest.inventory_qty == Decimal.new("-1.23")
-      assert sgd_latest.inventory_cost == Decimal.new("-1.23")
+      assert sgd_latest.inventory_cost == Decimal.new("-1.230000")
       assert sgd_latest.unit_cost == Decimal.new("1")
       assert sgd_latest.weighted_average_cost == Decimal.new("1")
-      assert sgd_latest.total_cost == Decimal.new("-1.23")
-      assert sgd_latest.total_cost == Decimal.new("-1.23")
+      assert sgd_latest.total_cost == Decimal.new("-1.230000")
     end
 
     test "success with dividends (from nothing to something)" do
@@ -112,8 +116,8 @@ defmodule Boonorbust.LedgersTest do
 
       assert sgd_latest.inventory_qty == Decimal.new("1.23")
       assert sgd_latest.inventory_cost == Decimal.new("1.23")
-      assert sgd_latest.unit_cost == Decimal.new("1.00000")
-      assert sgd_latest.weighted_average_cost == Decimal.new("1.00000")
+      assert sgd_latest.unit_cost == Decimal.new("1.000000")
+      assert sgd_latest.weighted_average_cost == Decimal.new("1.000000")
       assert sgd_latest.total_cost == Decimal.new("1.23")
       assert sgd_latest.total_cost == Decimal.new("1.23")
     end
@@ -145,7 +149,8 @@ defmodule Boonorbust.LedgersTest do
           user_id: user.id
         })
 
-      assert result.insert_buy_asset_latest_ledger.weighted_average_cost == Decimal.new("1.40000")
+      assert result.insert_buy_asset_latest_ledger.weighted_average_cost ==
+               Decimal.new("1.400000")
 
       # get 1.23 USD dividends
       {:ok, %{record: _result}} =
@@ -214,13 +219,13 @@ defmodule Boonorbust.LedgersTest do
       apple_latest = all_latest |> Enum.find(&(&1.asset_id == apple.id))
       sgd_latest = all_latest |> Enum.find(&(&1.asset_id == sgd.id))
 
-      assert sgd_latest.weighted_average_cost == Decimal.new("1.00000")
+      assert sgd_latest.weighted_average_cost == Decimal.new("1.000000")
       assert sgd_latest.inventory_qty == Decimal.new("190")
       assert sgd_latest.inventory_cost == Decimal.new("190")
 
       assert apple_latest.weighted_average_cost != Decimal.new("1.4")
       assert apple_latest.inventory_qty == Decimal.new("0")
-      assert apple_latest.inventory_cost == Decimal.new("0.00000")
+      assert apple_latest.inventory_cost == Decimal.new("0.000000")
     end
   end
 
@@ -278,8 +283,8 @@ defmodule Boonorbust.LedgersTest do
       # Sold for: 75 * 2.5 = 200
       # Bought using: -105
       assert sgd_latest.inventory_qty == Decimal.new(95)
-      assert sgd_latest.inventory_cost == Decimal.new(95)
-      assert sgd_latest.weighted_average_cost == Decimal.new("1.00000")
+      assert sgd_latest.inventory_cost == Decimal.new("95.000000")
+      assert sgd_latest.weighted_average_cost == Decimal.new("1.000000")
 
       # Prevent test from calling actual endpoint
       expect(HttpBehaviourMock, :get, 2, fn _url, _headers ->
@@ -294,7 +299,7 @@ defmodule Boonorbust.LedgersTest do
       [sgd_latest_ledger] = Boonorbust.Ledgers.all_latest(user.id)
 
       assert sgd_latest_ledger.latest_price == Decimal.new("1")
-      assert sgd_latest_ledger.latest_value == Decimal.new("95")
+      assert sgd_latest_ledger.latest_value == Decimal.new("95.000000")
       assert sgd_latest_ledger.profit_percent == Decimal.new("0.00")
     end
   end
