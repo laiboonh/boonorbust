@@ -14,6 +14,7 @@ defmodule Boonorbust.Ledgers.Ledger do
     field :transacted_at, :date
     field :latest, :boolean
 
+    belongs_to :user, Boonorbust.Accounts.User
     belongs_to :trade, Boonorbust.Trades.Trade
     belongs_to :asset, Boonorbust.Assets.Asset
 
@@ -34,7 +35,8 @@ defmodule Boonorbust.Ledgers.Ledger do
       :transacted_at,
       :latest,
       :trade_id,
-      :asset_id
+      :asset_id,
+      :user_id
     ])
     |> validate_required([
       :inventory_qty,
@@ -45,8 +47,8 @@ defmodule Boonorbust.Ledgers.Ledger do
       :qty,
       :transacted_at,
       :latest,
-      :trade_id,
-      :asset_id
+      :asset_id,
+      :user_id
     ])
   end
 end
