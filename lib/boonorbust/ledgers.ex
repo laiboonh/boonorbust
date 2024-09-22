@@ -46,7 +46,12 @@ defmodule Boonorbust.Ledgers do
   @spec sell(Trade.t()) :: Multi.t()
   defp sell(%Trade{from_asset_id: nil}), do: Multi.new()
 
-  defp sell(%Trade{id: trade_id, from_asset_id: from_asset_id, from_qty: from_qty}) do
+  defp sell(%Trade{
+         id: trade_id,
+         from_asset_id: from_asset_id,
+         from_qty: from_qty,
+         transacted_at: transacted_at
+       }) do
     qty = from_qty |> Decimal.negate()
     latest_ledger = get_latest(from_asset_id)
 
@@ -88,6 +93,7 @@ defmodule Boonorbust.Ledgers do
         unit_cost: unit_cost,
         total_cost: total_cost,
         qty: qty,
+        transacted_at: transacted_at,
         latest: true,
         trade_id: trade_id,
         asset_id: from_asset_id
@@ -103,6 +109,7 @@ defmodule Boonorbust.Ledgers do
            id: trade_id,
            to_qty: to_qty,
            to_asset_id: to_asset_id,
+           transacted_at: transacted_at,
            user_id: user_id
          },
          sell_asset_latest_ledger
@@ -155,6 +162,7 @@ defmodule Boonorbust.Ledgers do
         unit_cost: unit_cost,
         total_cost: total_cost,
         qty: qty,
+        transacted_at: transacted_at,
         latest: true,
         trade_id: trade_id,
         asset_id: to_asset_id

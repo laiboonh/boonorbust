@@ -25,7 +25,7 @@ defmodule BoonorbustWeb.Ledgers.LedgerLive do
     <%= if @ledgers != nil do %>
       <.table id="ledgers" rows={@ledgers}>
         <:col :let={ledger} label="Id"><%= ledger.id %></:col>
-        <:col :let={ledger} label="Transacted At"><%= ledger.trade.transacted_at %></:col>
+        <:col :let={ledger} label="Transacted At"><%= ledger.transacted_at %></:col>
         <:col :let={ledger} label="Qty"><%= ledger.qty %></:col>
         <:col :let={ledger} label="Unit Cost"><%= ledger.unit_cost %></:col>
         <:col :let={ledger} label="Total Cost"><%= ledger.total_cost %></:col>

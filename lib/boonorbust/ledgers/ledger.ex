@@ -11,6 +11,7 @@ defmodule Boonorbust.Ledgers.Ledger do
     field :unit_cost, :decimal
     field :total_cost, :decimal
     field :qty, :decimal
+    field :transacted_at, :date
     field :latest, :boolean
 
     belongs_to :trade, Boonorbust.Trades.Trade
