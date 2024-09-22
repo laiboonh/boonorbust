@@ -31,6 +31,7 @@ defmodule Boonorbust.Ledgers.Ledger do
       :unit_cost,
       :total_cost,
       :qty,
+      :transacted_at,
       :latest,
       :trade_id,
       :asset_id
@@ -42,6 +43,7 @@ defmodule Boonorbust.Ledgers.Ledger do
       :unit_cost,
       :total_cost,
       :qty,
+      :transacted_at,
       :latest,
       :trade_id,
       :asset_id
