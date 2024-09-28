@@ -72,7 +72,7 @@ defmodule BoonorbustWeb.PageLive do
       {:ok, _pid} =
         Task.start_link(fn ->
           send(self, :working)
-          all_latest = Ledgers.all_latest(user_id)
+          all_latest = Ledgers.all_non_currency_latest(user_id)
           send(self, {:task_done, all_latest})
         end)
     end

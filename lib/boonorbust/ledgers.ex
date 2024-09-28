@@ -202,11 +202,15 @@ defmodule Boonorbust.Ledgers do
     |> Repo.all()
   end
 
-  @spec all_latest(integer()) :: [Ledger.t()]
-  def all_latest(user_id) do
+  @spec all_non_currency_latest(integer()) :: [Ledger.t()]
+  def all_non_currency_latest(user_id) do
     Ledger
-    |> where([l], l.user_id == ^user_id and l.latest == true and l.inventory_qty != 0)
-    |> preload(:asset)
+    |> join(:inner, [l], a in Asset, on: l.asset_id == a.id)
+    |> preload([_l, a], asset: a)
+    |> where(
+      [l, a],
+      l.user_id == ^user_id and l.latest == true and l.inventory_qty != 0 and a.type != :currency
+    )
     |> Repo.all()
     |> calculate_price_value_profit(user_id)
     |> calculate_proportion()
@@ -307,8 +311,7 @@ defmodule Boonorbust.Ledgers do
   @spec latest_price(Asset.t(), Asset.t()) :: Decimal.t()
   defp latest_price(_root_asset, %Asset{type: :commodity, code: code}) do
     {:ok, %Finch.Response{body: body}} =
-      Finch.build(:get, "https://markets.ft.com/data/commodities/tearsheet/summary?c=#{code}")
-      |> Finch.request(Boonorbust.Finch)
+      Boonorbust.Http.get("https://markets.ft.com/data/commodities/tearsheet/summary?c=#{code}")
 
     Floki.parse_document!(body)
     |> Floki.find(".mod-ui-data-list__value")
@@ -320,8 +323,7 @@ defmodule Boonorbust.Ledgers do
 
   defp latest_price(_root_asset, %Asset{type: :fund, code: code}) do
     {:ok, %Finch.Response{body: body}} =
-      Finch.build(:get, "https://markets.ft.com/data/funds/tearsheet/summary?s=#{code}:SGD")
-      |> Finch.request(Boonorbust.Finch)
+      Boonorbust.Http.get("https://markets.ft.com/data/funds/tearsheet/summary?s=#{code}:SGD")
 
     Floki.parse_document!(body)
     |> Floki.find(".mod-ui-data-list__value")
@@ -332,9 +334,8 @@ defmodule Boonorbust.Ledgers do
   end
 
   defp latest_price(_root_asset, %Asset{type: :stock, code: code}) do
-    {:ok, %Finch.Response{body: body, status: 200}} =
-      Finch.build(:get, "https://www.investingnote.com/stocks/#{code}")
-      |> Finch.request(Boonorbust.Finch)
+    {:ok, %Finch.Response{body: body}} =
+      Boonorbust.Http.get("https://www.investingnote.com/stocks/#{code}")
 
     Floki.parse_document!(body)
     |> Floki.find("strong[class*='stock-price']")
@@ -345,12 +346,10 @@ defmodule Boonorbust.Ledgers do
 
   defp latest_price(root_asset, %Asset{type: :crypto, code: code}) do
     {:ok, %Finch.Response{body: body}} =
-      Finch.build(
-        :get,
+      Boonorbust.Http.get(
         "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=#{code}&convert=#{root_asset.code}",
         [{"X-CMC_PRO_API_KEY", "b0b87191-9b14-434e-b0a8-bee99fed3b40"}]
       )
-      |> Finch.request(Boonorbust.Finch)
 
     "#{Jason.decode!(body)["data"][code]["quote"][root_asset.code]["price"]}"
     |> String.replace(",", "")

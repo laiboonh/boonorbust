@@ -296,11 +296,70 @@ defmodule Boonorbust.LedgersTest do
          }}
       end)
 
-      [sgd_latest_ledger] = Boonorbust.Ledgers.all_latest(user.id)
+      [] = Boonorbust.Ledgers.all_non_currency_latest(user.id)
+    end
 
-      assert sgd_latest_ledger.latest_price == Decimal.new("1")
-      assert sgd_latest_ledger.latest_value == Decimal.new("95.000000")
-      assert sgd_latest_ledger.profit_percent == Decimal.new("0.00")
+    test "buy assets, currency is not returned" do
+      user = user_fixture()
+
+      assert {:ok, apple} =
+               Assets.create(%{
+                 name: "apple",
+                 code: "AAPL",
+                 type: :stock,
+                 user_id: user.id
+               })
+
+      assert {:ok, sgd} =
+               Assets.create(%{
+                 name: "sgd",
+                 code: "sgd",
+                 type: :currency,
+                 user_id: user.id,
+                 root: true
+               })
+
+      {:ok, _result} =
+        Trades.create(%{
+          from_asset_id: sgd.id,
+          to_asset_id: apple.id,
+          from_qty: 105,
+          to_qty: 75,
+          to_asset_unit_cost: 1.4,
+          transacted_at: Date.utc_today(),
+          user_id: user.id
+        })
+
+      :ok = Ledgers.recalculate(user.id)
+
+      # Prevent test from calling actual endpoint
+      expect(HttpBehaviourMock, :get, 2, fn _url, _headers ->
+        {:ok,
+         %Finch.Response{
+           body: """
+           <span class="mod-ui-data-list__value">1.23</span>
+           """
+         }}
+      end)
+
+      expect(HttpBehaviourMock, :get, fn _url, _headers ->
+        {:ok,
+         %Finch.Response{
+           body: """
+           <strong class="stock-price stock-up">227.790</strong>
+           """
+         }}
+      end)
+
+      [aapl_ledger] = Boonorbust.Ledgers.all_non_currency_latest(user.id)
+      assert aapl_ledger.inventory_qty == Decimal.new("75")
+      assert aapl_ledger.inventory_cost == Decimal.new("105.000000")
+      assert aapl_ledger.weighted_average_cost == Decimal.new("1.400000")
+      assert aapl_ledger.unit_cost == Decimal.new("1.400000")
+      assert aapl_ledger.total_cost == Decimal.new("105.000000")
+      assert aapl_ledger.qty == Decimal.new("75")
+      assert aapl_ledger.transacted_at == Date.utc_today()
+      assert aapl_ledger.latest == true
     end
   end
 end
