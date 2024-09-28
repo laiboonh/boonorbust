@@ -228,7 +228,7 @@ defmodule BoonorbustWeb.Trades.TradeLive do
                transacted_at: transacted_at,
                note: note
              },
-             auto_create
+             auto_create == "true"
            ) do
         {:ok, %{insert: trade}} ->
           socket
