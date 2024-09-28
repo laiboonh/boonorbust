@@ -19,17 +19,18 @@ defmodule BoonorbustWeb.PageController do
         )
 
       current_user ->
-        all_latest =
+        all_non_currency_latest =
           Ledgers.all_non_currency_latest(current_user.id)
           |> Enum.sort(fn %{profit_percent: pp1}, %{profit_percent: pp2} ->
             Decimal.compare(pp1, pp2) == :lt
           end)
 
         render(conn, :home,
-          latest_ledgers: all_latest,
-          profit_percent: Ledgers.profit_percent(current_user.id, all_latest),
+          latest_ledgers: all_non_currency_latest,
+          profit_percent: Ledgers.profit_percent(current_user.id, all_non_currency_latest),
           portfolio_svgs:
-            Ledgers.portfolios(current_user.id, all_latest) |> Enum.map(&portfolio_to_svg(&1)),
+            Ledgers.portfolios(current_user.id, all_non_currency_latest)
+            |> Enum.map(&portfolio_to_svg(&1)),
           profit_svg: Profits.all(current_user.id) |> profit_svg()
         )
     end

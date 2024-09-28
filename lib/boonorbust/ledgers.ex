@@ -198,7 +198,7 @@ defmodule Boonorbust.Ledgers do
     Ledger
     |> where([l], l.user_id == ^user_id and l.asset_id == ^asset_id)
     |> order_by(asc: :id)
-    |> preload(:trade)
+    |> preload(trade: [:from_asset, :to_asset])
     |> Repo.all()
   end
 
@@ -362,16 +362,13 @@ defmodule Boonorbust.Ledgers do
   def profit_percent(_user_id, []), do: Decimal.new(0)
 
   def profit_percent(user_id, latest_ledgers) do
-    {total_cost, total_value} =
+    root_asset = Assets.root(user_id)
+    total_cost = get_latest(root_asset.id).inventory_cost |> Decimal.abs()
+
+    total_value =
       latest_ledgers
-      |> Enum.reduce({Decimal.new(0), Decimal.new(0)}, fn l, {cost, value} ->
-        if l.latest_value |> Decimal.negative?() do
-          cost = l.latest_value |> Decimal.abs() |> Decimal.add(cost)
-          {cost, value}
-        else
-          value = l.latest_value |> Decimal.add(value)
-          {cost, value}
-        end
+      |> Enum.reduce(Decimal.new(0), fn l, acc ->
+        l.latest_value |> Decimal.add(acc)
       end)
 
     profit = total_value |> Decimal.sub(total_cost)
