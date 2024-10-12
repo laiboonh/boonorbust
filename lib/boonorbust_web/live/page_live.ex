@@ -48,6 +48,18 @@ defmodule BoonorbustWeb.PageLive do
         </:col>
         <:col
           :let={ledger}
+          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Latest Cost</span>"
+        >
+          <%= ledger.inventory_cost %>
+        </:col>
+        <:col
+          :let={ledger}
+          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Latest Value</span>"
+        >
+          <%= ledger.latest_value %>
+        </:col>
+        <:col
+          :let={ledger}
           label="<span phx-click='sort' phx-value-sort_by='profit_percent'>Profit %</span>"
         >
           <%= ledger.profit_percent %>%

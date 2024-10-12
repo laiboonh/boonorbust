@@ -222,8 +222,8 @@ defmodule Boonorbust.Ledgers do
   defp calculate_price_value_profit(latest, user_id) do
     root_asset = Assets.root(user_id)
 
-    usdsgd = exchange_rate("usdsgd")
-    hkdsgd = exchange_rate("hkdsgd")
+    usdsgd = Boonorbust.ExchangeRates.get_exchange_rate("usd", "sgd", Date.utc_today())
+    hkdsgd = Boonorbust.ExchangeRates.get_exchange_rate("hkd", "sgd", Date.utc_today())
 
     latest
     |> Enum.map(fn ledger ->
@@ -291,21 +291,6 @@ defmodule Boonorbust.Ledgers do
     Ledger
     |> where([l], l.user_id == ^user_id)
     |> Repo.delete_all()
-  end
-
-  @spec exchange_rate(binary()) :: Decimal.t()
-  def exchange_rate(currency_pair) do
-    {:ok, %Finch.Response{body: body}} =
-      Boonorbust.Http.get(
-        "https://markets.ft.com/data/currencies/tearsheet/summary?s=#{currency_pair}"
-      )
-
-    Floki.parse_document!(body)
-    |> Floki.find(".mod-ui-data-list__value")
-    |> hd()
-    |> Floki.text()
-    |> String.replace(",", "")
-    |> Decimal.new()
   end
 
   @spec latest_price(Asset.t(), Asset.t()) :: Decimal.t()

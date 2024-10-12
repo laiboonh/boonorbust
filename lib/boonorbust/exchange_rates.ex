@@ -30,7 +30,7 @@ defmodule Boonorbust.ExchangeRates do
   end
 
   @spec get_exchange_rate_from_api(String.t(), String.t(), Date.t()) :: ExchangeRate.t() | nil
-  def get_exchange_rate_from_api(from_currency, to_currency, date) do
+  defp get_exchange_rate_from_api(from_currency, to_currency, date) do
     {:ok, %Finch.Response{status: 200, body: body}} =
       Boonorbust.Http.get(
         "https://api.apilayer.com/exchangerates_data/#{date}?symbols=#{to_currency}&base=#{from_currency}",
@@ -43,7 +43,7 @@ defmodule Boonorbust.ExchangeRates do
   end
 
   @spec get_exchange_rate_from_db(String.t(), String.t(), Date.t()) :: ExchangeRate.t() | nil
-  def get_exchange_rate_from_db(from_currency, to_currency, date) do
+  defp get_exchange_rate_from_db(from_currency, to_currency, date) do
     Repo.one(
       from er in ExchangeRate,
         where:

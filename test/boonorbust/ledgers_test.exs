@@ -290,8 +290,18 @@ defmodule Boonorbust.LedgersTest do
       expect(HttpBehaviourMock, :get, 2, fn _url, _headers ->
         {:ok,
          %Finch.Response{
+           status: 200,
            body: """
-           <span class="mod-ui-data-list__value">1.23</span>
+           {
+           "success": true,
+           "timestamp": 1558310399,
+           "historical": true,
+           "base": "USD",
+           "date": "2019-05-19",
+           "rates": {
+           "SGD": 1.23
+           }
+           }
            """
          }}
       end)
@@ -336,8 +346,18 @@ defmodule Boonorbust.LedgersTest do
       expect(HttpBehaviourMock, :get, 2, fn _url, _headers ->
         {:ok,
          %Finch.Response{
+           status: 200,
            body: """
-           <span class="mod-ui-data-list__value">1.23</span>
+           {
+           "success": true,
+           "timestamp": 1558310399,
+           "historical": true,
+           "base": "USD",
+           "date": "2019-05-19",
+           "rates": {
+           "SGD": 1.23
+           }
+           }
            """
          }}
       end)
@@ -401,8 +421,18 @@ defmodule Boonorbust.LedgersTest do
       expect(HttpBehaviourMock, :get, 2, fn _url, _headers ->
         {:ok,
          %Finch.Response{
+           status: 200,
            body: """
-           <span class="mod-ui-data-list__value">1.23</span>
+           {
+           "success": true,
+           "timestamp": 1558310399,
+           "historical": true,
+           "base": "USD",
+           "date": "2019-05-19",
+           "rates": {
+           "SGD": 1.23
+           }
+           }
            """
          }}
       end)
