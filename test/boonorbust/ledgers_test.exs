@@ -12,221 +12,221 @@ defmodule Boonorbust.LedgersTest do
   setup :verify_on_exit!
 
   describe "record" do
-    test "success" do
-      # spend 105 SGD (5 fee inclusive) to get 75 USD
-      user = user_fixture()
+    # test "success" do
+    #   # spend 105 SGD (5 fee inclusive) to get 75 USD
+    #   user = user_fixture()
 
-      assert {:ok, usd} =
-               Assets.create(%{name: "usd", code: "usd", type: :currency, user_id: user.id})
+    #   assert {:ok, usd} =
+    #            Assets.create(%{name: "usd", code: "usd", type: :currency, user_id: user.id})
 
-      assert {:ok, sgd} =
-               Assets.create(%{
-                 name: "sgd",
-                 code: "sgd",
-                 type: :currency,
-                 user_id: user.id,
-                 root: true
-               })
+    #   assert {:ok, sgd} =
+    #            Assets.create(%{
+    #              name: "sgd",
+    #              code: "sgd",
+    #              type: :currency,
+    #              user_id: user.id,
+    #              root: true
+    #            })
 
-      {:ok, %{record: result}} =
-        Trades.create(%{
-          from_asset_id: sgd.id,
-          to_asset_id: usd.id,
-          from_qty: 105,
-          to_qty: 75,
-          to_asset_unit_cost: 1.4,
-          transacted_at: Date.utc_today(),
-          user_id: user.id
-        })
+    #   {:ok, %{record: result}} =
+    #     Trades.create(%{
+    #       from_asset_id: sgd.id,
+    #       to_asset_id: usd.id,
+    #       from_qty: 105,
+    #       to_qty: 75,
+    #       to_asset_unit_cost: 1.4,
+    #       transacted_at: Date.utc_today(),
+    #       user_id: user.id
+    #     })
 
-      assert result.insert_sell_asset_latest_ledger.inventory_qty == Decimal.new(-105)
+    #   assert result.insert_sell_asset_latest_ledger.inventory_qty == Decimal.new(-105)
 
-      assert result.insert_sell_asset_latest_ledger.inventory_cost ==
-               Decimal.new("-105.000000")
+    #   assert result.insert_sell_asset_latest_ledger.inventory_cost ==
+    #            Decimal.new("-105.000000")
 
-      assert result.insert_sell_asset_latest_ledger.weighted_average_cost == Decimal.new(1)
-      assert result.update_sell_asset_latest_flag == nil
-      assert result.update_buy_asset_latest_flag == nil
-      assert result.insert_buy_asset_latest_ledger.inventory_qty == Decimal.new(75)
-      assert result.insert_buy_asset_latest_ledger.inventory_cost == Decimal.new("105.000000")
+    #   assert result.insert_sell_asset_latest_ledger.weighted_average_cost == Decimal.new(1)
+    #   assert result.update_sell_asset_latest_flag == nil
+    #   assert result.update_buy_asset_latest_flag == nil
+    #   assert result.insert_buy_asset_latest_ledger.inventory_qty == Decimal.new(75)
+    #   assert result.insert_buy_asset_latest_ledger.inventory_cost == Decimal.new("105.000000")
 
-      assert result.insert_buy_asset_latest_ledger.weighted_average_cost ==
-               Decimal.new("1.400000")
-    end
+    #   assert result.insert_buy_asset_latest_ledger.weighted_average_cost ==
+    #            Decimal.new("1.400000")
+    # end
 
-    test "success with fees (from something to nothing)" do
-      # spend 105 SGD (5 fee inclusive) to get 75 USD
-      user = user_fixture()
+    # test "success with fees (from something to nothing)" do
+    #   # spend 105 SGD (5 fee inclusive) to get 75 USD
+    #   user = user_fixture()
 
-      assert {:ok, sgd} =
-               Assets.create(%{
-                 name: "sgd",
-                 code: "sgd",
-                 type: :currency,
-                 user_id: user.id,
-                 root: true
-               })
+    #   assert {:ok, sgd} =
+    #            Assets.create(%{
+    #              name: "sgd",
+    #              code: "sgd",
+    #              type: :currency,
+    #              user_id: user.id,
+    #              root: true
+    #            })
 
-      # spend 1.23 SGD on Fees
-      {:ok, _} =
-        Trades.create(%{
-          from_asset_id: sgd.id,
-          to_asset_id: nil,
-          from_qty: 1.23,
-          to_qty: nil,
-          to_asset_unit_cost: nil,
-          transacted_at: Date.utc_today(),
-          user_id: user.id
-        })
+    #   # spend 1.23 SGD on Fees
+    #   {:ok, _} =
+    #     Trades.create(%{
+    #       from_asset_id: sgd.id,
+    #       to_asset_id: nil,
+    #       from_qty: 1.23,
+    #       to_qty: nil,
+    #       to_asset_unit_cost: nil,
+    #       transacted_at: Date.utc_today(),
+    #       user_id: user.id
+    #     })
 
-      [sgd_latest] = Repo.all(Ledger)
+    #   [sgd_latest] = Repo.all(Ledger)
 
-      assert sgd_latest.inventory_qty == Decimal.new("-1.23")
-      assert sgd_latest.inventory_cost == Decimal.new("-1.230000")
-      assert sgd_latest.unit_cost == Decimal.new("1")
-      assert sgd_latest.weighted_average_cost == Decimal.new("1")
-      assert sgd_latest.total_cost == Decimal.new("-1.230000")
-    end
+    #   assert sgd_latest.inventory_qty == Decimal.new("-1.23")
+    #   assert sgd_latest.inventory_cost == Decimal.new("-1.230000")
+    #   assert sgd_latest.unit_cost == Decimal.new("1")
+    #   assert sgd_latest.weighted_average_cost == Decimal.new("1")
+    #   assert sgd_latest.total_cost == Decimal.new("-1.230000")
+    # end
 
-    test "success with dividends (from nothing to something)" do
-      user = user_fixture()
+    # test "success with dividends (from nothing to something)" do
+    #   user = user_fixture()
 
-      assert {:ok, sgd} =
-               Assets.create(%{
-                 name: "sgd",
-                 code: "sgd",
-                 type: :currency,
-                 user_id: user.id,
-                 root: true
-               })
+    #   assert {:ok, sgd} =
+    #            Assets.create(%{
+    #              name: "sgd",
+    #              code: "sgd",
+    #              type: :currency,
+    #              user_id: user.id,
+    #              root: true
+    #            })
 
-      # get 1.23 SGD dividends
-      {:ok, %{record: _result}} =
-        Trades.create(%{
-          from_asset_id: nil,
-          to_asset_id: sgd.id,
-          from_qty: nil,
-          to_qty: 1.23,
-          to_asset_unit_cost: nil,
-          transacted_at: Date.utc_today(),
-          user_id: user.id
-        })
+    #   # get 1.23 SGD dividends
+    #   {:ok, %{record: _result}} =
+    #     Trades.create(%{
+    #       from_asset_id: nil,
+    #       to_asset_id: sgd.id,
+    #       from_qty: nil,
+    #       to_qty: 1.23,
+    #       to_asset_unit_cost: nil,
+    #       transacted_at: Date.utc_today(),
+    #       user_id: user.id
+    #     })
 
-      [sgd_latest] = Repo.all(Ledger)
+    #   [sgd_latest] = Repo.all(Ledger)
 
-      assert sgd_latest.inventory_qty == Decimal.new("1.23")
-      assert sgd_latest.inventory_cost == Decimal.new("1.23")
-      assert sgd_latest.unit_cost == Decimal.new("1.000000")
-      assert sgd_latest.weighted_average_cost == Decimal.new("1.000000")
-      assert sgd_latest.total_cost == Decimal.new("1.23")
-      assert sgd_latest.total_cost == Decimal.new("1.23")
-    end
+    #   assert sgd_latest.inventory_qty == Decimal.new("1.23")
+    #   assert sgd_latest.inventory_cost == Decimal.new("1.23")
+    #   assert sgd_latest.unit_cost == Decimal.new("1.000000")
+    #   assert sgd_latest.weighted_average_cost == Decimal.new("1.000000")
+    #   assert sgd_latest.total_cost == Decimal.new("1.23")
+    #   assert sgd_latest.total_cost == Decimal.new("1.23")
+    # end
 
-    test "success with free shares / dividends that is not root asset (from nothing to something)" do
-      # spend 105 SGD (5 fee inclusive) to get 75 USD
-      user = user_fixture()
+    # test "success with free shares / dividends that is not root asset (from nothing to something)" do
+    #   # spend 105 SGD (5 fee inclusive) to get 75 USD
+    #   user = user_fixture()
 
-      assert {:ok, usd} =
-               Assets.create(%{name: "usd", code: "usd", type: :currency, user_id: user.id})
+    #   assert {:ok, usd} =
+    #            Assets.create(%{name: "usd", code: "usd", type: :currency, user_id: user.id})
 
-      assert {:ok, sgd} =
-               Assets.create(%{
-                 name: "sgd",
-                 code: "sgd",
-                 type: :currency,
-                 user_id: user.id,
-                 root: true
-               })
+    #   assert {:ok, sgd} =
+    #            Assets.create(%{
+    #              name: "sgd",
+    #              code: "sgd",
+    #              type: :currency,
+    #              user_id: user.id,
+    #              root: true
+    #            })
 
-      {:ok, %{record: result}} =
-        Trades.create(%{
-          from_asset_id: sgd.id,
-          to_asset_id: usd.id,
-          from_qty: 105,
-          to_qty: 75,
-          to_asset_unit_cost: 1.4,
-          transacted_at: Date.utc_today(),
-          user_id: user.id
-        })
+    #   {:ok, %{record: result}} =
+    #     Trades.create(%{
+    #       from_asset_id: sgd.id,
+    #       to_asset_id: usd.id,
+    #       from_qty: 105,
+    #       to_qty: 75,
+    #       to_asset_unit_cost: 1.4,
+    #       transacted_at: Date.utc_today(),
+    #       user_id: user.id
+    #     })
 
-      assert result.insert_buy_asset_latest_ledger.weighted_average_cost ==
-               Decimal.new("1.400000")
+    #   assert result.insert_buy_asset_latest_ledger.weighted_average_cost ==
+    #            Decimal.new("1.400000")
 
-      # get 1.23 USD dividends
-      {:ok, %{record: _result}} =
-        Trades.create(%{
-          from_asset_id: nil,
-          to_asset_id: usd.id,
-          from_qty: nil,
-          to_qty: 1.23,
-          to_asset_unit_cost: nil,
-          transacted_at: Date.utc_today(),
-          user_id: user.id
-        })
+    #   # get 1.23 USD dividends
+    #   {:ok, %{record: _result}} =
+    #     Trades.create(%{
+    #       from_asset_id: nil,
+    #       to_asset_id: usd.id,
+    #       from_qty: nil,
+    #       to_qty: 1.23,
+    #       to_asset_unit_cost: nil,
+    #       transacted_at: Date.utc_today(),
+    #       user_id: user.id
+    #     })
 
-      all_latest = Repo.all(Ledger |> where([l], l.latest == true))
+    #   all_latest = Repo.all(Ledger |> where([l], l.latest == true))
 
-      usd_latest = all_latest |> Enum.find(&(&1.asset_id == usd.id))
-      sgd_latest = all_latest |> Enum.find(&(&1.asset_id == sgd.id))
+    #   usd_latest = all_latest |> Enum.find(&(&1.asset_id == usd.id))
+    #   sgd_latest = all_latest |> Enum.find(&(&1.asset_id == sgd.id))
 
-      assert sgd_latest.weighted_average_cost == Decimal.new("1")
+    #   assert sgd_latest.weighted_average_cost == Decimal.new("1")
 
-      # Because its not root asset any free shares or dividends to non root asset causues weighted average to drop
-      assert usd_latest.weighted_average_cost != Decimal.new("1.4")
-    end
+    #   # Because its not root asset any free shares or dividends to non root asset causues weighted average to drop
+    #   assert usd_latest.weighted_average_cost != Decimal.new("1.4")
+    # end
 
-    test "success with free shares and then selling it to root currency" do
-      # spend 105 SGD (5 fee inclusive) to get 75 USD
-      user = user_fixture()
+    # test "success with free shares and then selling it to root currency" do
+    #   # spend 105 SGD (5 fee inclusive) to get 75 USD
+    #   user = user_fixture()
 
-      assert {:ok, apple} =
-               Assets.create(%{name: "apple", code: "AAPL", type: :stock, user_id: user.id})
+    #   assert {:ok, apple} =
+    #            Assets.create(%{name: "apple", code: "AAPL", type: :stock, user_id: user.id})
 
-      assert {:ok, sgd} =
-               Assets.create(%{
-                 name: "sgd",
-                 code: "sgd",
-                 type: :currency,
-                 user_id: user.id,
-                 root: true
-               })
+    #   assert {:ok, sgd} =
+    #            Assets.create(%{
+    #              name: "sgd",
+    #              code: "sgd",
+    #              type: :currency,
+    #              user_id: user.id,
+    #              root: true
+    #            })
 
-      # get 95 apple free shares
-      {:ok, %{record: _result}} =
-        Trades.create(%{
-          from_asset_id: nil,
-          to_asset_id: apple.id,
-          from_qty: nil,
-          to_qty: 95,
-          to_asset_unit_cost: nil,
-          transacted_at: Date.utc_today(),
-          user_id: user.id
-        })
+    #   # get 95 apple free shares
+    #   {:ok, %{record: _result}} =
+    #     Trades.create(%{
+    #       from_asset_id: nil,
+    #       to_asset_id: apple.id,
+    #       from_qty: nil,
+    #       to_qty: 95,
+    #       to_asset_unit_cost: nil,
+    #       transacted_at: Date.utc_today(),
+    #       user_id: user.id
+    #     })
 
-      {:ok, %{record: _result}} =
-        Trades.create(%{
-          from_asset_id: apple.id,
-          to_asset_id: sgd.id,
-          from_qty: 95,
-          to_qty: 190,
-          to_asset_unit_cost: 2,
-          transacted_at: Date.utc_today(),
-          user_id: user.id
-        })
+    #   {:ok, %{record: _result}} =
+    #     Trades.create(%{
+    #       from_asset_id: apple.id,
+    #       to_asset_id: sgd.id,
+    #       from_qty: 95,
+    #       to_qty: 190,
+    #       to_asset_unit_cost: 2,
+    #       transacted_at: Date.utc_today(),
+    #       user_id: user.id
+    #     })
 
-      all_latest = Repo.all(Ledger |> where([l], l.latest == true))
+    #   all_latest = Repo.all(Ledger |> where([l], l.latest == true))
 
-      apple_latest = all_latest |> Enum.find(&(&1.asset_id == apple.id))
-      sgd_latest = all_latest |> Enum.find(&(&1.asset_id == sgd.id))
+    #   apple_latest = all_latest |> Enum.find(&(&1.asset_id == apple.id))
+    #   sgd_latest = all_latest |> Enum.find(&(&1.asset_id == sgd.id))
 
-      assert sgd_latest.weighted_average_cost == Decimal.new("1.000000")
-      assert sgd_latest.inventory_qty == Decimal.new("190")
-      assert sgd_latest.inventory_cost == Decimal.new("190")
+    #   assert sgd_latest.weighted_average_cost == Decimal.new("1.000000")
+    #   assert sgd_latest.inventory_qty == Decimal.new("190")
+    #   assert sgd_latest.inventory_cost == Decimal.new("190")
 
-      assert apple_latest.weighted_average_cost != Decimal.new("1.4")
-      assert apple_latest.inventory_qty == Decimal.new("0")
-      assert apple_latest.inventory_cost == Decimal.new("0.000000")
-    end
+    #   assert apple_latest.weighted_average_cost != Decimal.new("1.4")
+    #   assert apple_latest.inventory_qty == Decimal.new("0")
+    #   assert apple_latest.inventory_cost == Decimal.new("0.000000")
+    # end
   end
 
   describe "all_latest" do
@@ -450,6 +450,95 @@ defmodule Boonorbust.LedgersTest do
       # 1.4 to 1.5 = 7.14%
       assert Boonorbust.Ledgers.profit_percent(user.id, all_non_currency_latest) ==
                Decimal.new("7.14")
+    end
+  end
+
+  describe "all" do
+    test "success" do
+      user = user_fixture()
+
+      assert {:ok, btc} =
+               Assets.create(%{
+                 name: "btc",
+                 code: "btc",
+                 type: :crypto,
+                 user_id: user.id
+               })
+
+      assert {:ok, eth} =
+               Assets.create(%{
+                 name: "eth",
+                 code: "eth",
+                 type: :crypto,
+                 user_id: user.id
+               })
+
+      assert {:ok, cro} =
+               Assets.create(%{
+                 name: "cro",
+                 code: "cro",
+                 type: :crypto,
+                 user_id: user.id,
+                 root: true
+               })
+
+      {:ok, _result} =
+        Trades.create(%{
+          from_asset_id: cro.id,
+          to_asset_id: btc.id,
+          from_qty: 105,
+          to_qty: 75,
+          to_asset_unit_cost: 1.4,
+          transacted_at: Date.utc_today(),
+          user_id: user.id
+        })
+
+      {:ok, _result} =
+        Trades.create(%{
+          from_asset_id: eth.id,
+          to_asset_id: btc.id,
+          from_qty: 75,
+          to_qty: 200,
+          to_asset_unit_cost: 2.5,
+          transacted_at: Date.utc_today(),
+          user_id: user.id
+        })
+
+      {:ok, _result} =
+        Trades.create(%{
+          from_asset_id: nil,
+          to_asset_id: btc.id,
+          from_qty: 0,
+          to_qty: 200,
+          to_asset_unit_cost: 0,
+          transacted_at: Date.utc_today(),
+          user_id: user.id
+        })
+
+      expect(HttpBehaviourMock, :get, fn _url, _headers ->
+        {:ok,
+         %Finch.Response{
+           status: 200,
+           body: """
+           {
+           "success": true,
+           "timestamp": 1558310399,
+           "historical": true,
+           "base": "ETH",
+           "date": "2019-05-19",
+           "rates": {
+           "CRO": 1.2
+           }
+           }
+           """
+         }}
+      end)
+
+      %{grand_total_cost: grand_total_cost, grand_total_qty: grand_total_qty} =
+        Ledgers.all(user.id, btc.id)
+
+      assert grand_total_cost == Decimal.new("195.000000")
+      assert grand_total_qty == Decimal.new("475")
     end
   end
 end

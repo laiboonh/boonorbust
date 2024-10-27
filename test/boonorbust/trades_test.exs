@@ -35,13 +35,10 @@ defmodule Boonorbust.TradesTest do
           user_id: user.id
         })
 
-      [usd_ledger] = Ledgers.all(user.id, usd.id)
-      assert usd_ledger.inventory_qty == Decimal.new("75")
-      assert usd_ledger.inventory_cost == Decimal.new("105.000000")
+      ledgers = Ledgers.all(user.id, usd.id)
 
-      [usd_ledger] = Ledgers.all(user.id, sgd.id)
-      assert usd_ledger.inventory_qty == Decimal.new("-105")
-      assert usd_ledger.inventory_cost == Decimal.new("-105.000000")
+      assert ledgers.grand_total_cost == Decimal.new("105.000000")
+      assert ledgers.grand_total_qty == Decimal.new("75")
     end
 
     test "success with auto_create trade" do
@@ -95,17 +92,34 @@ defmodule Boonorbust.TradesTest do
           true
         )
 
-      [sgd_ledger] = Ledgers.all(user.id, sgd.id)
+      assert Ledgers.all(user.id, sgd.id) == %{
+               trades_by_from_asset_code: [],
+               grand_total_cost: Decimal.new("0"),
+               grand_total_qty: Decimal.new("0")
+             }
 
-      assert sgd_ledger.weighted_average_cost == Decimal.new("1")
-      assert sgd_ledger.qty == Decimal.new("-144.540897")
+      expect(HttpBehaviourMock, :get, fn _url, _headers ->
+        {:ok,
+         %Finch.Response{
+           status: 200,
+           body: """
+           {
+           "success": true,
+           "timestamp": 1558310399,
+           "historical": true,
+           "base": "USD",
+           "date": "2019-05-19",
+           "rates": {
+           "SGD": 1.25
+           }
+           }
+           """
+         }}
+      end)
 
-      assert Ledgers.all(user.id, usd.id) |> length() == 2
-
-      [apple_ledger] = Ledgers.all(user.id, apple.id)
-
-      assert apple_ledger.total_cost == Decimal.new("144.540900")
-      assert apple_ledger.qty == Decimal.new("75")
+      ledgers = Ledgers.all(user.id, apple.id)
+      assert ledgers.grand_total_cost == Decimal.new("131.250000")
+      assert ledgers.grand_total_qty == Decimal.new("75")
     end
   end
 

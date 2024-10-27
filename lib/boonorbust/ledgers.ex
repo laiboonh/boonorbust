@@ -3,6 +3,7 @@ defmodule Boonorbust.Ledgers do
 
   alias Boonorbust.Assets
   alias Boonorbust.Assets.Asset
+  alias Boonorbust.ExchangeRates
   alias Boonorbust.Ledgers.Ledger
   alias Boonorbust.Portfolios
   alias Boonorbust.Portfolios.Portfolio
@@ -193,13 +194,71 @@ defmodule Boonorbust.Ledgers do
     end
   end
 
-  @spec all(integer(), integer()) :: [Ledger.t()]
+  @spec all(integer(), integer()) :: map()
   def all(user_id, asset_id) do
-    Ledger
-    |> where([l], l.user_id == ^user_id and l.asset_id == ^asset_id)
-    |> order_by(asc: :id)
-    |> preload(trade: [:from_asset, :to_asset])
-    |> Repo.all()
+    trades = Trades.all_to_asset(user_id, asset_id)
+    root_asset = Assets.root(user_id)
+
+    trades_by_from_asset_code =
+      trades
+      |> Enum.group_by(& &1.from_asset)
+      |> Enum.map(fn {from_asset, trades} ->
+        from_asset_code = if from_asset == nil, do: nil, else: from_asset.code
+        {from_asset_code, process_trades(trades)}
+      end)
+
+    {grand_total_cost, grand_total_qty} =
+      process_trades_by_from_asset(trades_by_from_asset_code, root_asset)
+
+    %{
+      trades_by_from_asset_code: trades_by_from_asset_code,
+      grand_total_cost: grand_total_cost,
+      grand_total_qty: grand_total_qty
+    }
+  end
+
+  @spec process_trades(any()) :: %{
+          total_cost: Decimal.t(),
+          total_qty: Decimal.t(),
+          trades: [Trade.t()]
+        }
+  defp process_trades(trades) do
+    {total_cost, total_qty} =
+      Enum.reduce(trades, {Decimal.new(0), Decimal.new(0)}, fn %Trade{
+                                                                 from_qty: from_qty,
+                                                                 to_qty: to_qty
+                                                               },
+                                                               {total_cost, total_qty} ->
+        from_qty = if from_qty == nil, do: Decimal.new(0), else: from_qty
+        to_qty = if to_qty == nil, do: Decimal.new(0), else: to_qty
+        {total_cost |> Decimal.add(from_qty), total_qty |> Decimal.add(to_qty)}
+      end)
+
+    %{trades: trades, total_cost: total_cost, total_qty: total_qty}
+  end
+
+  defp process_trades_by_from_asset(trades_by_from_asset_code, root_asset) do
+    local_currency = root_asset.code
+
+    Enum.reduce(trades_by_from_asset_code, {Decimal.new(0), Decimal.new(0)}, fn {from_asset_code,
+                                                                                 from_asset_calculations},
+                                                                                {grand_total_cost,
+                                                                                 grand_total_qty} ->
+      if from_asset_code == nil do
+        {grand_total_cost, grand_total_qty |> Decimal.add(from_asset_calculations.total_qty)}
+      else
+        %{to_amount: total_cost_in_local_currency} =
+          ExchangeRates.convert(
+            from_asset_code,
+            local_currency,
+            Date.utc_today(),
+            from_asset_calculations.total_cost
+          )
+
+        {grand_total_cost |> Decimal.add(total_cost_in_local_currency),
+         grand_total_qty |> Decimal.add(from_asset_calculations.total_qty)}
+      end
+    end)
   end
 
   @spec all_non_currency_latest(integer()) :: [Ledger.t()]

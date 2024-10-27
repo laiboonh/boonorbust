@@ -4,7 +4,7 @@ defmodule Boonorbust.Trades do
   alias Boonorbust.Assets
   alias Boonorbust.Assets.Asset
   alias Boonorbust.ExchangeRates
-  alias Boonorbust.Ledgers
+  # alias Boonorbust.Ledgers
   alias Boonorbust.Repo
   alias Boonorbust.Trades.Trade
   alias Ecto.Changeset
@@ -22,7 +22,8 @@ defmodule Boonorbust.Trades do
           %Trade{}
           |> Trade.changeset(attrs)
         )
-        |> Multi.run(:record, fn _repo, %{insert: trade} -> Ledgers.record(trade) end)
+
+        # |> Multi.run(:record, fn _repo, %{insert: trade} -> Ledgers.record(trade) end)
       else
         Multi.new()
         |> Multi.insert(
@@ -30,7 +31,8 @@ defmodule Boonorbust.Trades do
           %Trade{}
           |> Trade.changeset(attrs)
         )
-        |> Multi.run(:record, fn _repo, %{insert: trade} -> Ledgers.record(trade) end)
+
+        # |> Multi.run(:record, fn _repo, %{insert: trade} -> Ledgers.record(trade) end)
       end
 
     Repo.transaction(multi)
@@ -110,6 +112,15 @@ defmodule Boonorbust.Trades do
     |> where([t, fa, ta], ^filter_where(filter_where_attrs))
     |> order_by(desc: :transacted_at)
     |> Repo.paginate(attrs)
+  end
+
+  @spec all_to_asset(integer(), integer()) :: [Trade.t()]
+  def all_to_asset(user_id, asset_id) do
+    Trade
+    |> join(:left, [t], ta in Asset, on: t.to_asset_id == ta.id)
+    |> where([t, ta], t.user_id == ^user_id and ta.id == ^asset_id)
+    |> preload([_t, _ta], [:from_asset])
+    |> Repo.all()
   end
 
   def filter_where(nil), do: dynamic(true)

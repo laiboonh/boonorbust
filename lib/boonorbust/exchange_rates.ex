@@ -20,13 +20,17 @@ defmodule Boonorbust.ExchangeRates do
     from_currency = from_currency |> String.upcase()
     to_currency = to_currency |> String.upcase()
 
-    exchange_rate =
-      case get_exchange_rate_from_db(from_currency, to_currency, date) do
-        nil -> get_exchange_rate_from_api(from_currency, to_currency, date)
-        exchange_rate -> exchange_rate
-      end
+    if from_currency == to_currency do
+      Decimal.new(1)
+    else
+      exchange_rate =
+        case get_exchange_rate_from_db(from_currency, to_currency, date) do
+          nil -> get_exchange_rate_from_api(from_currency, to_currency, date)
+          exchange_rate -> exchange_rate
+        end
 
-    exchange_rate.rate
+      exchange_rate.rate
+    end
   end
 
   @spec get_exchange_rate_from_api(String.t(), String.t(), Date.t()) :: ExchangeRate.t() | nil

@@ -23,24 +23,22 @@ defmodule BoonorbustWeb.Ledgers.LedgerLive do
     </div>
 
     <%= if @ledgers != nil do %>
-      <.table id="ledgers" rows={@ledgers}>
-        <:col :let={ledger} label="Id"><%= ledger.id %></:col>
-        <:col :let={ledger} label="<strong>From Qty (Trade)</strong>">
-          <%= ledger.trade.from_qty %> <%= if ledger.trade.from_asset != nil,
-            do: ledger.trade.from_asset.code %>
-        </:col>
-        <:col :let={ledger} label="<strong>To Qty (Trade)</strong>">
-          <%= ledger.trade.to_qty %> <%= if ledger.trade.to_asset != nil,
-            do: ledger.trade.to_asset.code %>
-        </:col>
-        <:col :let={ledger} label="Transacted At"><%= ledger.transacted_at %></:col>
-        <:col :let={ledger} label="Qty"><%= ledger.qty %></:col>
-        <:col :let={ledger} label="Unit Cost"><%= ledger.unit_cost %></:col>
-        <:col :let={ledger} label="Total Cost"><%= ledger.total_cost %></:col>
-        <:col :let={ledger} label="Inventory Qty"><%= ledger.inventory_qty %></:col>
-        <:col :let={ledger} label="Weighted Avg Cost"><%= ledger.weighted_average_cost %></:col>
-        <:col :let={ledger} label="Inventory Cost"><%= ledger.inventory_cost %></:col>
-      </.table>
+      <%= for {from_asset_name, %{trades: trades, total_qty: total_qty, total_cost: total_cost}} <- @ledgers.trades_by_from_asset_code do %>
+        <%= from_asset_name %> Total Qty: <%= total_qty %> Total Cost: <%= total_cost %>
+        <.table id="trades" rows={trades}>
+          <:col :let={trade} label="Id"><%= trade.id %></:col>
+          <:col :let={trade} label="<strong>From Qty (Trade)</strong>">
+            <%= trade.from_qty %>
+          </:col>
+          <:col :let={trade} label="<strong>To Qty (Trade)</strong>">
+            <%= trade.to_qty %>
+          </:col>
+          <:col :let={trade} label="Transacted At"><%= trade.transacted_at %></:col>
+          <:col :let={trade} label="To Asset Unit Cost"><%= trade.to_asset_unit_cost %></:col>
+        </.table>
+      <% end %>
+      Grand Total Cost In Local Currency: <%= @ledgers.grand_total_cost %><br />
+      Grand Total Qty: <%= @ledgers.grand_total_qty %><br />
     <% end %>
     """
   end
