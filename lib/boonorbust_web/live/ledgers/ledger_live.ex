@@ -1,5 +1,6 @@
 defmodule BoonorbustWeb.Ledgers.LedgerLive do
   alias Boonorbust.Ledgers
+  alias Boonorbust.Utils
   use BoonorbustWeb, :live_view
 
   def render(assigns) do
@@ -24,7 +25,8 @@ defmodule BoonorbustWeb.Ledgers.LedgerLive do
 
     <%= if @ledgers != nil do %>
       <%= for {from_asset_name, %{trades: trades, total_qty: total_qty, total_cost: total_cost}} <- @ledgers.trades_by_from_asset_code do %>
-        <%= from_asset_name %> Total Qty: <%= total_qty %> Total Cost: <%= total_cost %>
+        <%= from_asset_name %> Total Qty: <%= total_qty %>, Total Cost: <%= total_cost %>, Average Cost: <%= total_cost
+        |> Utils.divide(total_qty) %>
         <.table id="trades" rows={trades}>
           <:col :let={trade} label="Id"><%= trade.id %></:col>
           <:col :let={trade} label="<strong>From Qty (Trade)</strong>">
@@ -37,8 +39,22 @@ defmodule BoonorbustWeb.Ledgers.LedgerLive do
           <:col :let={trade} label="To Asset Unit Cost"><%= trade.to_asset_unit_cost %></:col>
         </.table>
       <% end %>
-      Grand Total Cost In Local Currency: <%= @ledgers.grand_total_cost %><br />
-      Grand Total Qty: <%= @ledgers.grand_total_qty %><br />
+      Total Cost In Local Currency: <%= @ledgers.grand_total_cost %>, Total Qty: <%= @ledgers.grand_total_qty %>, Average Cost: <%= if @ledgers.grand_total_qty
+                                                                                                                                       |> Decimal.eq?(
+                                                                                                                                         Decimal.new(
+                                                                                                                                           0
+                                                                                                                                         )
+                                                                                                                                       ),
+                                                                                                                                       do:
+                                                                                                                                         Decimal.new(
+                                                                                                                                           0
+                                                                                                                                         ),
+                                                                                                                                       else:
+                                                                                                                                         @ledgers.grand_total_cost
+                                                                                                                                         |> Utils.divide(
+                                                                                                                                           @ledgers.grand_total_qty
+                                                                                                                                         ) %>
+      <br />
     <% end %>
     """
   end
