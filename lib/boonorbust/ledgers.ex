@@ -196,11 +196,43 @@ defmodule Boonorbust.Ledgers do
 
   @spec all(integer(), integer()) :: map()
   def all(user_id, asset_id) do
-    trades = Trades.all_to_asset(user_id, asset_id)
+    trades = Trades.all_to_and_from_asset(user_id, asset_id)
+
     root_asset = Assets.root(user_id)
 
     trades_by_from_asset_code =
       trades
+      |> Enum.map(fn %Trade{
+                       from_asset_id: from_asset_id,
+                       from_qty: from_qty,
+                       to_qty: to_qty,
+                       to_asset_unit_cost: to_asset_unit_cost,
+                       transacted_at: transacted_at,
+                       from_asset: from_asset,
+                       to_asset: to_asset
+                     } ->
+        if from_asset_id == asset_id do
+          # sell trade, sell 9988 1 to hkd 90
+          %{
+            to_asset_unit_cost: to_asset_unit_cost,
+            transacted_at: transacted_at,
+            from_asset: to_asset,
+            to_asset: from_asset,
+            from_qty: to_qty,
+            to_qty: from_qty |> Decimal.negate()
+          }
+        else
+          # buy trade, sell HKD 90 to 1 9988
+          %{
+            to_asset_unit_cost: to_asset_unit_cost,
+            transacted_at: transacted_at,
+            from_asset: from_asset,
+            to_asset: to_asset,
+            from_qty: from_qty |> Decimal.negate(),
+            to_qty: to_qty
+          }
+        end
+      end)
       |> Enum.group_by(& &1.from_asset)
       |> Enum.map(fn {from_asset, trades} ->
         from_asset_code = if from_asset == nil, do: nil, else: from_asset.code
@@ -220,11 +252,11 @@ defmodule Boonorbust.Ledgers do
   @spec process_trades(any()) :: %{
           total_cost: Decimal.t(),
           total_qty: Decimal.t(),
-          trades: [Trade.t()]
+          trades: [map()]
         }
   defp process_trades(trades) do
     {total_cost, total_qty} =
-      Enum.reduce(trades, {Decimal.new(0), Decimal.new(0)}, fn %Trade{
+      Enum.reduce(trades, {Decimal.new(0), Decimal.new(0)}, fn %{
                                                                  from_qty: from_qty,
                                                                  to_qty: to_qty
                                                                },

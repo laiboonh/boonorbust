@@ -454,21 +454,13 @@ defmodule Boonorbust.LedgersTest do
   end
 
   describe "all" do
-    test "success" do
+    test "success with dividend like trades" do
       user = user_fixture()
 
       assert {:ok, btc} =
                Assets.create(%{
                  name: "btc",
                  code: "btc",
-                 type: :crypto,
-                 user_id: user.id
-               })
-
-      assert {:ok, eth} =
-               Assets.create(%{
-                 name: "eth",
-                 code: "eth",
                  type: :crypto,
                  user_id: user.id
                })
@@ -495,6 +487,53 @@ defmodule Boonorbust.LedgersTest do
 
       {:ok, _result} =
         Trades.create(%{
+          from_asset_id: nil,
+          to_asset_id: btc.id,
+          from_qty: 0,
+          to_qty: 200,
+          to_asset_unit_cost: 0,
+          transacted_at: Date.utc_today(),
+          user_id: user.id
+        })
+
+      %{grand_total_cost: grand_total_cost, grand_total_qty: grand_total_qty} =
+        Ledgers.all(user.id, btc.id)
+
+      assert grand_total_cost == Decimal.new("-105.000000")
+      assert grand_total_qty == Decimal.new("275")
+    end
+
+    test "success with sell trades" do
+      # ETH -> BTC, BTC -> ETH
+      user = user_fixture()
+
+      assert {:ok, _sgd} =
+               Assets.create(%{
+                 name: "sgd",
+                 code: "sgd",
+                 type: :currency,
+                 user_id: user.id,
+                 root: true
+               })
+
+      assert {:ok, btc} =
+               Assets.create(%{
+                 name: "btc",
+                 code: "btc",
+                 type: :crypto,
+                 user_id: user.id
+               })
+
+      assert {:ok, eth} =
+               Assets.create(%{
+                 name: "eth",
+                 code: "eth",
+                 type: :crypto,
+                 user_id: user.id
+               })
+
+      {:ok, _result} =
+        Trades.create(%{
           from_asset_id: eth.id,
           to_asset_id: btc.id,
           from_qty: 75,
@@ -506,11 +545,11 @@ defmodule Boonorbust.LedgersTest do
 
       {:ok, _result} =
         Trades.create(%{
-          from_asset_id: nil,
-          to_asset_id: btc.id,
-          from_qty: 0,
-          to_qty: 200,
-          to_asset_unit_cost: 0,
+          from_asset_id: btc.id,
+          to_asset_id: eth.id,
+          from_qty: 100,
+          to_qty: 37.5,
+          to_asset_unit_cost: 2.5,
           transacted_at: Date.utc_today(),
           user_id: user.id
         })
@@ -527,7 +566,7 @@ defmodule Boonorbust.LedgersTest do
            "base": "ETH",
            "date": "2019-05-19",
            "rates": {
-           "CRO": 1.2
+           "SGD": 1.2
            }
            }
            """
@@ -537,8 +576,88 @@ defmodule Boonorbust.LedgersTest do
       %{grand_total_cost: grand_total_cost, grand_total_qty: grand_total_qty} =
         Ledgers.all(user.id, btc.id)
 
-      assert grand_total_cost == Decimal.new("195.000000")
-      assert grand_total_qty == Decimal.new("475")
+      # -37.5 converted to SGD = -37.5 * 1.2 = -45
+      assert grand_total_cost == Decimal.new("-45.000000")
+      assert grand_total_qty == Decimal.new("100")
+    end
+
+    test "success with sell trades to another asset" do
+      # SGD -> BTC, BTC -> ETH
+      user = user_fixture()
+
+      assert {:ok, sgd} =
+               Assets.create(%{
+                 name: "sgd",
+                 code: "sgd",
+                 type: :currency,
+                 user_id: user.id,
+                 root: true
+               })
+
+      assert {:ok, btc} =
+               Assets.create(%{
+                 name: "btc",
+                 code: "btc",
+                 type: :crypto,
+                 user_id: user.id
+               })
+
+      assert {:ok, eth} =
+               Assets.create(%{
+                 name: "eth",
+                 code: "eth",
+                 type: :crypto,
+                 user_id: user.id
+               })
+
+      {:ok, _result} =
+        Trades.create(%{
+          from_asset_id: sgd.id,
+          to_asset_id: btc.id,
+          from_qty: 75,
+          to_qty: 200,
+          to_asset_unit_cost: 2.5,
+          transacted_at: Date.utc_today(),
+          user_id: user.id
+        })
+
+      {:ok, _result} =
+        Trades.create(%{
+          from_asset_id: btc.id,
+          to_asset_id: eth.id,
+          from_qty: 100,
+          to_qty: 37.5,
+          to_asset_unit_cost: 2.5,
+          transacted_at: Date.utc_today(),
+          user_id: user.id
+        })
+
+      expect(HttpBehaviourMock, :get, fn _url, _headers ->
+        {:ok,
+         %Finch.Response{
+           status: 200,
+           body: """
+           {
+           "success": true,
+           "timestamp": 1558310399,
+           "historical": true,
+           "base": "ETH",
+           "date": "2019-05-19",
+           "rates": {
+           "SGD": 1.2
+           }
+           }
+           """
+         }}
+      end)
+
+      %{grand_total_cost: grand_total_cost, grand_total_qty: grand_total_qty} =
+        Ledgers.all(user.id, btc.id)
+
+      # -75 sgd spent to buy BTC, 37.5 ETH (converted to local currency = 45 SGD)
+      # -75 + 45 = -30 SGD
+      assert grand_total_cost == Decimal.new("-30.000000")
+      assert grand_total_qty == Decimal.new("100")
     end
   end
 end

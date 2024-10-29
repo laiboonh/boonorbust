@@ -37,7 +37,7 @@ defmodule Boonorbust.TradesTest do
 
       ledgers = Ledgers.all(user.id, usd.id)
 
-      assert ledgers.grand_total_cost == Decimal.new("105.000000")
+      assert ledgers.grand_total_cost == Decimal.new("-105.000000")
       assert ledgers.grand_total_qty == Decimal.new("75")
     end
 
@@ -58,25 +58,6 @@ defmodule Boonorbust.TradesTest do
 
       assert {:ok, apple} =
                Assets.create(%{name: "apple", code: "appl", type: :stock, user_id: user.id})
-
-      expect(HttpBehaviourMock, :get, fn _url, _headers ->
-        {:ok,
-         %Finch.Response{
-           status: 200,
-           body: """
-           {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "SGD",
-           "date": "2019-05-19",
-           "rates": {
-           "USD": 0.726438
-           }
-           }
-           """
-         }}
-      end)
 
       {:ok, _trade} =
         Trades.create(
@@ -118,7 +99,7 @@ defmodule Boonorbust.TradesTest do
       end)
 
       ledgers = Ledgers.all(user.id, apple.id)
-      assert ledgers.grand_total_cost == Decimal.new("131.250000")
+      assert ledgers.grand_total_cost == Decimal.new("-131.250000")
       assert ledgers.grand_total_qty == Decimal.new("75")
     end
   end

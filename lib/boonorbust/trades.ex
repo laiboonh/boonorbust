@@ -1,13 +1,9 @@
 defmodule Boonorbust.Trades do
   import Ecto.Query, warn: false
 
-  alias Boonorbust.Assets
   alias Boonorbust.Assets.Asset
-  alias Boonorbust.ExchangeRates
-  # alias Boonorbust.Ledgers
   alias Boonorbust.Repo
   alias Boonorbust.Trades.Trade
-  alias Ecto.Changeset
   alias Ecto.Multi
 
   @spec create(%{atom => any()}, boolean()) ::
@@ -16,7 +12,7 @@ defmodule Boonorbust.Trades do
     multi =
       if auto_create do
         Multi.new()
-        |> Multi.run(:auto_create, fn _repo, _changes -> maybe_auto_create_trade(attrs) end)
+        # |> Multi.run(:auto_create, fn _repo, _changes -> maybe_auto_create_trade(attrs) end)
         |> Multi.insert(
           :insert,
           %Trade{}
@@ -38,42 +34,42 @@ defmodule Boonorbust.Trades do
     Repo.transaction(multi)
   end
 
-  @spec maybe_auto_create_trade(map()) :: {:ok, Trade.t() | nil} | {:error, Changeset.t()}
-  defp maybe_auto_create_trade(%{
-         from_asset_id: from_asset_id,
-         from_qty: from_qty,
-         to_asset_id: to_asset_id,
-         user_id: user_id,
-         transacted_at: transacted_at
-       }) do
-    root_asset = Assets.root(user_id)
-    from_asset = Assets.get(from_asset_id, user_id)
+  # @spec maybe_auto_create_trade(map()) :: {:ok, Trade.t() | nil} | {:error, Changeset.t()}
+  # defp maybe_auto_create_trade(%{
+  #        from_asset_id: from_asset_id,
+  #        from_qty: from_qty,
+  #        to_asset_id: to_asset_id,
+  #        user_id: user_id,
+  #        transacted_at: transacted_at
+  #      }) do
+  #   root_asset = Assets.root(user_id)
+  #   from_asset = Assets.get(from_asset_id, user_id)
 
-    if from_asset_id != root_asset.id && to_asset_id != root_asset.id &&
-         from_asset.type == :currency do
-      to_asset_id = from_asset_id
-      to_asset = from_asset
+  #   if from_asset_id != root_asset.id && to_asset_id != root_asset.id &&
+  #        from_asset.type == :currency do
+  #     to_asset_id = from_asset_id
+  #     to_asset = from_asset
 
-      exchange_rate =
-        ExchangeRates.get_exchange_rate(root_asset.code, to_asset.code, transacted_at)
+  #     exchange_rate =
+  #       ExchangeRates.get_exchange_rate(root_asset.code, to_asset.code, transacted_at)
 
-      to_qty = from_qty
+  #     to_qty = from_qty
 
-      from_qty = Boonorbust.Utils.divide(Decimal.new(to_qty), exchange_rate)
+  #     from_qty = Boonorbust.Utils.divide(Decimal.new(to_qty), exchange_rate)
 
-      create(%{
-        from_asset_id: root_asset.id,
-        to_asset_id: to_asset_id,
-        from_qty: from_qty,
-        to_qty: to_qty,
-        to_asset_unit_cost: exchange_rate,
-        transacted_at: transacted_at,
-        user_id: user_id
-      })
-    else
-      {:ok, nil}
-    end
-  end
+  #     create(%{
+  #       from_asset_id: root_asset.id,
+  #       to_asset_id: to_asset_id,
+  #       from_qty: from_qty,
+  #       to_qty: to_qty,
+  #       to_asset_unit_cost: exchange_rate,
+  #       transacted_at: transacted_at,
+  #       user_id: user_id
+  #     })
+  #   else
+  #     {:ok, nil}
+  #   end
+  # end
 
   @spec get(integer(), integer()) :: Trade.t() | nil
   def get(id, user_id) do
@@ -114,12 +110,13 @@ defmodule Boonorbust.Trades do
     |> Repo.paginate(attrs)
   end
 
-  @spec all_to_asset(integer(), integer()) :: [Trade.t()]
-  def all_to_asset(user_id, asset_id) do
+  @spec all_to_and_from_asset(integer(), integer()) :: [Trade.t()]
+  def all_to_and_from_asset(user_id, asset_id) do
     Trade
     |> join(:left, [t], ta in Asset, on: t.to_asset_id == ta.id)
-    |> where([t, ta], t.user_id == ^user_id and ta.id == ^asset_id)
-    |> preload([_t, _ta], [:from_asset])
+    |> join(:left, [t, ta], fa in Asset, on: t.from_asset_id == fa.id)
+    |> where([t, ta, fa], t.user_id == ^user_id and (ta.id == ^asset_id or fa.id == ^asset_id))
+    |> preload([_t, _ta, _fa], [:from_asset, :to_asset])
     |> Repo.all()
   end
 
