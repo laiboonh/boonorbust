@@ -54,7 +54,7 @@ defmodule Boonorbust.Ledgers do
          transacted_at: transacted_at,
          user_id: user_id
        }) do
-    qty = from_qty |> Decimal.negate()
+    qty = from_qty |> negate()
     latest_ledger = get_latest(from_asset_id)
 
     latest_weighted_average_cost =
@@ -203,6 +203,7 @@ defmodule Boonorbust.Ledgers do
     trades_by_from_asset_code =
       trades
       |> Enum.map(fn %Trade{
+                       id: id,
                        from_asset_id: from_asset_id,
                        from_qty: from_qty,
                        to_qty: to_qty,
@@ -214,21 +215,23 @@ defmodule Boonorbust.Ledgers do
         if from_asset_id == asset_id do
           # sell trade, sell 9988 1 to hkd 90
           %{
+            id: id,
             to_asset_unit_cost: to_asset_unit_cost,
             transacted_at: transacted_at,
             from_asset: to_asset,
             to_asset: from_asset,
             from_qty: to_qty,
-            to_qty: from_qty |> Decimal.negate()
+            to_qty: from_qty |> negate()
           }
         else
           # buy trade, sell HKD 90 to 1 9988
           %{
+            id: id,
             to_asset_unit_cost: to_asset_unit_cost,
             transacted_at: transacted_at,
             from_asset: from_asset,
             to_asset: to_asset,
-            from_qty: from_qty |> Decimal.negate(),
+            from_qty: from_qty |> negate(),
             to_qty: to_qty
           }
         end
@@ -505,4 +508,7 @@ defmodule Boonorbust.Ledgers do
       %{name: tag.name, value: tag_value}
     end)
   end
+
+  defp negate(nil), do: Decimal.new(0)
+  defp negate(decimal), do: decimal |> Decimal.negate()
 end
