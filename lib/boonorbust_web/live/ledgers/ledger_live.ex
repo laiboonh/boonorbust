@@ -83,7 +83,7 @@ defmodule BoonorbustWeb.Ledgers.LedgerLive do
 
     socket =
       socket
-      |> assign(:ledgers, Ledgers.all(user_id, asset_id))
+      |> assign(:ledgers, Ledgers.all(user_id, asset_id |> String.to_integer()))
       |> assign(:action, "search")
 
     {:noreply, socket}
