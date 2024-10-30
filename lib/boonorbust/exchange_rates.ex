@@ -1,6 +1,8 @@
 defmodule Boonorbust.ExchangeRates do
   import Ecto.Query, warn: false
 
+  require Logger
+
   alias Boonorbust.ExchangeRates.ExchangeRate
   alias Boonorbust.Repo
   alias Boonorbust.Utils
@@ -35,6 +37,8 @@ defmodule Boonorbust.ExchangeRates do
 
   @spec get_exchange_rate_from_api(String.t(), String.t(), Date.t()) :: ExchangeRate.t() | nil
   defp get_exchange_rate_from_api(from_currency, to_currency, date) do
+    Logger.info("get_exchange_rate_from_api #{from_currency} #{to_currency}")
+
     {:ok, %Finch.Response{status: 200, body: body}} =
       Boonorbust.Http.get(
         "https://api.apilayer.com/exchangerates_data/#{date}?symbols=#{to_currency}&base=#{from_currency}",
