@@ -212,8 +212,12 @@ defmodule Boonorbust.Ledgers do
                        from_asset: from_asset,
                        to_asset: to_asset
                      } ->
-        if from_asset_id == asset_id do
-          # sell trade, sell 9988 1 to hkd 90
+        # Difference in perspective:
+        # if asset_id is local_currency it being from_asset becomes a buy trade
+        # if asset_id is NOT local currency it being from asset becomes a sell trade
+        if from_asset_id == asset_id && asset_id != root_asset.id do
+          # sell trade, from 9988 1 to HKD 90
+
           %{
             id: id,
             to_asset_unit_cost: to_asset_unit_cost,
@@ -224,7 +228,8 @@ defmodule Boonorbust.Ledgers do
             to_qty: from_qty |> negate()
           }
         else
-          # buy trade, sell HKD 90 to 1 9988
+          # buy trade, from HKD 90 to 9988 1
+
           %{
             id: id,
             to_asset_unit_cost: to_asset_unit_cost,
