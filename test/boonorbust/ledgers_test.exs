@@ -582,7 +582,7 @@ defmodule Boonorbust.LedgersTest do
     end
 
     test "success with sell trades to another asset" do
-      # SGD -> BTC, BTC -> ETH
+      # SGD -> BTC, BTC -> USD
       user = user_fixture()
 
       assert {:ok, sgd} =
@@ -602,11 +602,11 @@ defmodule Boonorbust.LedgersTest do
                  user_id: user.id
                })
 
-      assert {:ok, eth} =
+      assert {:ok, usd} =
                Assets.create(%{
-                 name: "eth",
-                 code: "eth",
-                 type: :crypto,
+                 name: "usd",
+                 code: "usd",
+                 type: :currency,
                  user_id: user.id
                })
 
@@ -624,7 +624,7 @@ defmodule Boonorbust.LedgersTest do
       {:ok, _result} =
         Trades.create(%{
           from_asset_id: btc.id,
-          to_asset_id: eth.id,
+          to_asset_id: usd.id,
           from_qty: 100,
           to_qty: 37.5,
           to_asset_unit_cost: 2.5,
@@ -641,7 +641,7 @@ defmodule Boonorbust.LedgersTest do
            "success": true,
            "timestamp": 1558310399,
            "historical": true,
-           "base": "ETH",
+           "base": "USD",
            "date": "2019-05-19",
            "rates": {
            "SGD": 1.2

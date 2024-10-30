@@ -1,6 +1,8 @@
 defmodule Boonorbust.Ledgers do
   import Ecto.Query, warn: false
 
+  require Logger
+
   alias Boonorbust.Assets
   alias Boonorbust.Assets.Asset
   alias Boonorbust.ExchangeRates
@@ -196,12 +198,10 @@ defmodule Boonorbust.Ledgers do
 
   @spec all(integer(), integer()) :: map()
   def all(user_id, asset_id) do
-    trades = Trades.all_to_and_from_asset(user_id, asset_id)
-
     root_asset = Assets.root(user_id)
 
-    trades_by_from_asset_code =
-      trades
+    trades =
+      Trades.all_to_and_from_asset(user_id, asset_id)
       |> Enum.map(fn %Trade{
                        id: id,
                        from_asset_id: from_asset_id,
@@ -236,6 +236,11 @@ defmodule Boonorbust.Ledgers do
           }
         end
       end)
+
+    Logger.info("#{inspect(trades)}")
+
+    trades_by_from_asset_code =
+      trades
       |> Enum.group_by(& &1.from_asset)
       |> Enum.map(fn {from_asset, trades} ->
         from_asset_code = if from_asset == nil, do: nil, else: from_asset.code
