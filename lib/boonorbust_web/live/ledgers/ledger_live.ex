@@ -14,7 +14,7 @@ defmodule BoonorbustWeb.Ledgers.LedgerLive do
         <.simple_form for={@ledger_form} id="ledger_form" phx-change={@action}>
           <.input
             field={@ledger_form[:asset_id]}
-            label="Asset"
+            label="To Asset"
             type="select"
             options={@asset_options}
             required
@@ -26,9 +26,9 @@ defmodule BoonorbustWeb.Ledgers.LedgerLive do
 
     <%= if @ledgers != nil do %>
       <%= for {from_asset_name, %{trades: trades, total_qty: total_qty, total_cost: total_cost}} <- @ledgers.trades_by_from_asset_code do %>
-        <p class="font-bold"><%= from_asset_name %></p>
+        <p class="font-bold">From Asset: <%= from_asset_name %></p>
         <br />
-        Total Cost In Local Currency: <%= total_cost %>, Total Asset Qty: <%= total_qty %>, Average Cost: <%= total_cost
+        Total Cost: <%= total_cost %>, Total Asset Qty: <%= total_qty %>, Average Cost: <%= total_cost
         |> Utils.divide(total_qty) %>
         <.table id="trades" rows={trades}>
           <:col :let={trade} label="Id"><%= trade.id %></:col>
