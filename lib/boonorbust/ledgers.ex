@@ -246,31 +246,40 @@ defmodule Boonorbust.Ledgers do
   @spec all(integer()) :: list(map())
   def all(user_id) do
     Assets.all(user_id)
-    |> Enum.map(fn asset ->
-      %{grand_total_cost: grand_total_cost, grand_total_qty: grand_total_qty} =
-        all(user_id, asset.id)
+    |> Task.async_stream(
+      fn asset ->
+        %{grand_total_cost: grand_total_cost, grand_total_qty: grand_total_qty} =
+          all(user_id, asset.id)
 
-      total_value_in_local_currency =
-        get_total_value_in_local_currency(user_id, asset, grand_total_qty)
+        total_value_in_local_currency =
+          get_total_value_in_local_currency(user_id, asset, grand_total_qty)
 
-      profit_percent =
-        if grand_total_cost |> Decimal.eq?(Decimal.new(0)) do
-          Decimal.new(0)
-        else
-          total_value_in_local_currency
-          |> Decimal.sub(grand_total_cost |> Decimal.abs())
-          |> Boonorbust.Utils.divide(grand_total_cost |> Decimal.abs())
-          |> Utils.multiply(Decimal.new(100))
-          |> Decimal.round(2)
-        end
+        profit_percent =
+          if asset.type == :currency || grand_total_cost |> Decimal.eq?(Decimal.new(0)) ||
+               total_value_in_local_currency |> Decimal.eq?(Decimal.new(0)) do
+            Decimal.new(0)
+          else
+            total_value_in_local_currency
+            |> Decimal.sub(grand_total_cost |> Decimal.abs())
+            |> Boonorbust.Utils.divide(grand_total_cost |> Decimal.abs())
+            |> Utils.multiply(Decimal.new(100))
+            |> Decimal.round(2)
+          end
 
-      %{
-        total_cost_in_local_currency: grand_total_cost,
-        total_value_in_local_currency: total_value_in_local_currency,
-        profit_percent: profit_percent,
-        asset: asset
-      }
+        %{
+          total_cost_in_local_currency: grand_total_cost,
+          total_value_in_local_currency: total_value_in_local_currency,
+          profit_percent: profit_percent,
+          asset: asset
+        }
+      end,
+      max_concurrency: 5,
+      timeout: 60_000
+    )
+    |> Stream.map(fn {:ok, val} ->
+      val
     end)
+    |> Enum.to_list()
   end
 
   @spec get_total_value_in_local_currency(integer(), Asset.t(), Decimal.t()) :: Decimal.t()
@@ -550,12 +559,18 @@ defmodule Boonorbust.Ledgers do
   def profit_percent(_user_id, []), do: Decimal.new(0)
 
   def profit_percent(user_id, ledgers) do
-    # total_cost is the amount of local currency spent to acquire assets
+    # total_cost is the amount of local currency spent to acquire assets + positive cost of assets if any
     root_asset = ledgers |> Enum.find(ledgers, &(&1.asset.root == true))
 
-    total_cost = root_asset.total_value_in_local_currency
+    total_cost =
+      ledgers
+      |> Enum.filter(&(&1.total_cost_in_local_currency |> Decimal.lt?(Decimal.new(0))))
+      |> Enum.reduce(Decimal.new(0), fn l, acc ->
+        l.total_cost_in_local_currency |> Decimal.add(acc)
+      end)
+      |> Decimal.add(root_asset.total_value_in_local_currency)
 
-    # total_value is the sum of all non local currency assets
+    # total_value is the sum of cost of all non local currency assets
     total_value =
       ledgers
       |> Enum.reject(&(&1.asset.root == true))

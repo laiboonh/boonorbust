@@ -48,19 +48,19 @@ defmodule BoonorbustWeb.PageLive do
         </:col>
         <:col
           :let={ledger}
-          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Cost in local currency</span>"
+          label="<span phx-click='sort' phx-value-sort_by='total_cost_in_local_currency'>Cost in local currency</span>"
         >
           <%= ledger.total_cost_in_local_currency %>
         </:col>
         <:col
           :let={ledger}
-          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Value in local currency</span>"
+          label="<span phx-click='sort' phx-value-sort_by='total_value_in_local_currency'>Value in local currency</span>"
         >
           <%= ledger.total_value_in_local_currency %>
         </:col>
         <:col
           :let={ledger}
-          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Profit %</span>"
+          label="<span phx-click='sort' phx-value-sort_by='profit_percent'>Profit %</span>"
         >
           <%= ledger.profit_percent %>
         </:col>
@@ -106,7 +106,7 @@ defmodule BoonorbustWeb.PageLive do
     socket =
       socket
       |> assign(loading_all_assets: false)
-      |> assign(:ledgers, ledgers)
+      |> assign(:ledgers, sort_ledgers(ledgers, socket.assigns.sort_by, socket.assigns.asc))
       |> assign(:profit_percent, Ledgers.profit_percent(user_id, ledgers))
       |> assign(
         :portfolio_svgs,
