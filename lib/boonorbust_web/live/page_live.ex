@@ -40,35 +40,29 @@ defmodule BoonorbustWeb.PageLive do
       <% end %>
     <% end %>
 
-    <%= if @latest_ledgers do %>
-      <.table id="ledgers" rows={@latest_ledgers |> Enum.reject(&(&1.asset.root == true))}>
+    <%= if @ledgers do %>
+      <.table id="ledgers" rows={@ledgers}>
         <:col :let={ledger} label="<span phx-click='sort' phx-value-sort_by='name'>Name</span>">
           <%= ledger.asset.name %><br />
           <p class="text-slate-400"><%= ledger.asset.code %></p>
         </:col>
         <:col
           :let={ledger}
-          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Latest Cost</span>"
+          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Cost in local currency</span>"
         >
-          <%= ledger.inventory_cost %>
+          <%= ledger.total_cost_in_local_currency %>
         </:col>
         <:col
           :let={ledger}
-          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Latest Value</span>"
+          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Value in local currency</span>"
         >
-          <%= ledger.latest_value %>
+          <%= ledger.total_value_in_local_currency %>
         </:col>
         <:col
           :let={ledger}
-          label="<span phx-click='sort' phx-value-sort_by='profit_percent'>Profit %</span>"
+          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Profit %</span>"
         >
-          <%= ledger.profit_percent %>%
-        </:col>
-        <:col
-          :let={ledger}
-          label="<span phx-click='sort' phx-value-sort_by='latest_proportion'>Proportion %</span>"
-        >
-          <%= ledger.latest_proportion %>%
+          <%= ledger.profit_percent %>
         </:col>
       </.table>
     <% end %>
@@ -84,15 +78,15 @@ defmodule BoonorbustWeb.PageLive do
       {:ok, _pid} =
         Task.start_link(fn ->
           send(self, :working)
-          all_latest = Ledgers.all_non_currency_latest(user_id)
-          send(self, {:task_done, all_latest})
+          ledgers = Ledgers.all(user_id)
+          send(self, {:task_done, ledgers})
         end)
     end
 
     socket =
       socket
       |> assign(:loading_all_assets, nil)
-      |> assign(:latest_ledgers, nil)
+      |> assign(:ledgers, nil)
       |> assign(:profit_percent, nil)
       |> assign(:portfolio_svgs, nil)
       |> assign(:profit_svg, nil)
@@ -106,17 +100,17 @@ defmodule BoonorbustWeb.PageLive do
     {:noreply, assign(socket, loading_all_assets: true)}
   end
 
-  def handle_info({:task_done, all_latest}, socket) do
+  def handle_info({:task_done, ledgers}, socket) do
     user_id = socket.assigns.current_user.id
 
     socket =
       socket
       |> assign(loading_all_assets: false)
-      |> assign(:latest_ledgers, all_latest)
-      |> assign(:profit_percent, Ledgers.profit_percent(user_id, all_latest))
+      |> assign(:ledgers, ledgers)
+      |> assign(:profit_percent, Ledgers.profit_percent(user_id, ledgers))
       |> assign(
         :portfolio_svgs,
-        Ledgers.portfolios(user_id, all_latest) |> Enum.map(&portfolio_to_svg(&1))
+        Ledgers.portfolios(user_id, ledgers) |> Enum.map(&portfolio_to_svg(&1))
       )
       |> assign(:profit_svg, Profits.all(user_id) |> profit_svg())
 
@@ -125,7 +119,7 @@ defmodule BoonorbustWeb.PageLive do
 
   def handle_event("sort", %{"sort_by" => sort_by}, socket) do
     sort_by = sort_by |> String.to_atom()
-    latest_ledgers = socket.assigns.latest_ledgers
+    ledgers = socket.assigns.ledgers
     asc = !socket.assigns.asc
 
     {:noreply,
@@ -133,20 +127,20 @@ defmodule BoonorbustWeb.PageLive do
      |> assign(
        sort_by: sort_by,
        asc: asc,
-       latest_ledgers: sort_latest_ledgers(latest_ledgers, sort_by, asc)
+       ledgers: sort_ledgers(ledgers, sort_by, asc)
      )}
   end
 
-  def sort_latest_ledgers(latest_ledgers, sort_by, asc) do
+  def sort_ledgers(ledgers, sort_by, asc) do
     if sort_by == :name do
       order = if asc, do: :asc, else: :desc
 
-      latest_ledgers
+      ledgers
       |> Enum.sort_by(& &1.asset.name, order)
     else
       order = if asc, do: :lt, else: :gt
 
-      latest_ledgers
+      ledgers
       |> Enum.sort(fn one, two ->
         sort_by_value_1 = get_in(one, [Access.key!(sort_by)])
         sort_by_value_2 = get_in(two, [Access.key!(sort_by)])

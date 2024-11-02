@@ -199,61 +199,19 @@ defmodule Boonorbust.Ledgers do
   @spec all(integer(), integer()) :: map()
   def all(user_id, asset_id) do
     root_asset = Assets.root(user_id)
-
-    trades =
-      Trades.all_to_and_from_asset(user_id, asset_id)
-      |> Enum.map(fn %Trade{
-                       id: id,
-                       from_asset_id: from_asset_id,
-                       from_qty: from_qty,
-                       to_qty: to_qty,
-                       to_asset_unit_cost: to_asset_unit_cost,
-                       transacted_at: transacted_at,
-                       from_asset: from_asset,
-                       to_asset: to_asset
-                     } ->
-        # Difference in perspective:
-        # if asset_id is local_currency it being from_asset becomes a buy trade
-        # if asset_id is NOT local currency it being from asset becomes a sell trade
-        if from_asset_id == asset_id && asset_id != root_asset.id do
-          # sell trade, from 9988 1 to HKD 90
-
-          %{
-            id: id,
-            to_asset_unit_cost: to_asset_unit_cost,
-            transacted_at: transacted_at,
-            from_asset: to_asset,
-            to_asset: from_asset,
-            from_qty: to_qty,
-            to_qty: from_qty |> negate()
-          }
-        else
-          # buy trade, from HKD 90 to 9988 1
-
-          %{
-            id: id,
-            to_asset_unit_cost: to_asset_unit_cost,
-            transacted_at: transacted_at,
-            from_asset: from_asset,
-            to_asset: to_asset,
-            from_qty: from_qty |> negate(),
-            to_qty: to_qty
-          }
-        end
-      end)
-
-    Logger.info("#{inspect(trades)}")
+    asset = Assets.get(asset_id, user_id)
+    currency? = asset.type == :currency
 
     trades_by_from_asset_code =
-      trades
+      normalize_trades(user_id, asset_id, currency?)
       |> Enum.group_by(& &1.from_asset)
       |> Enum.map(fn {from_asset, trades} ->
         from_asset_code = if from_asset == nil, do: nil, else: from_asset.code
-        {from_asset_code, process_trades(trades)}
+        {from_asset_code, process_trades(trades, currency?)}
       end)
 
     {grand_total_cost, grand_total_qty} =
-      process_trades_by_from_asset(trades_by_from_asset_code, root_asset)
+      process_trades_by_from_asset(trades_by_from_asset_code, root_asset, currency?)
 
     %{
       trades_by_from_asset_code: trades_by_from_asset_code,
@@ -262,12 +220,135 @@ defmodule Boonorbust.Ledgers do
     }
   end
 
-  @spec process_trades(any()) :: %{
+  defp normalize_trades(user_id, asset_id, currency?) do
+    Trades.all_to_and_from_asset(user_id, asset_id)
+    |> Enum.map(fn %Trade{from_asset_id: from_asset_id} = trade ->
+      # Difference in perspective:
+      # if asset_id is currency it being from_asset becomes a buy trade
+      # if asset_id is NOT currency it being from asset becomes a sell trade
+      if currency? do
+        if from_asset_id == asset_id do
+          buy_trade(trade)
+        else
+          sell_trade(trade)
+        end
+      else
+        # credo:disable-for-next-line
+        if from_asset_id == asset_id do
+          sell_trade(trade)
+        else
+          buy_trade(trade)
+        end
+      end
+    end)
+  end
+
+  @spec all(integer()) :: list(map())
+  def all(user_id) do
+    Assets.all(user_id)
+    |> Enum.map(fn asset ->
+      %{grand_total_cost: grand_total_cost, grand_total_qty: grand_total_qty} =
+        all(user_id, asset.id)
+
+      total_value_in_local_currency =
+        get_total_value_in_local_currency(user_id, asset, grand_total_qty)
+
+      profit_percent =
+        if grand_total_cost |> Decimal.eq?(Decimal.new(0)) do
+          Decimal.new(0)
+        else
+          total_value_in_local_currency
+          |> Decimal.sub(grand_total_cost |> Decimal.abs())
+          |> Boonorbust.Utils.divide(grand_total_cost |> Decimal.abs())
+          |> Utils.multiply(Decimal.new(100))
+          |> Decimal.round(2)
+        end
+
+      %{
+        total_cost_in_local_currency: grand_total_cost,
+        total_value_in_local_currency: total_value_in_local_currency,
+        profit_percent: profit_percent,
+        asset: asset
+      }
+    end)
+  end
+
+  @spec get_total_value_in_local_currency(integer(), Asset.t(), Decimal.t()) :: Decimal.t()
+  defp get_total_value_in_local_currency(user_id, asset, grand_total_qty) do
+    root_asset = Assets.root(user_id)
+
+    usd_local_currency =
+      Boonorbust.ExchangeRates.get_exchange_rate("usd", root_asset.code, Date.utc_today())
+
+    hkd_local_currency =
+      Boonorbust.ExchangeRates.get_exchange_rate("hkd", root_asset.code, Date.utc_today())
+
+    latest_price = latest_price(root_asset, asset)
+
+    latest_price =
+      cond do
+        asset.code |> String.contains?("NYSE") or
+          asset.code |> String.contains?("NASDAQ") or
+          asset.code |> String.contains?("SGX:H78") or
+            asset.type == :commodity ->
+          latest_price |> Utils.multiply(usd_local_currency)
+
+        asset.code |> String.contains?("HKEX") ->
+          latest_price |> Utils.multiply(hkd_local_currency)
+
+        true ->
+          latest_price
+      end
+
+    Decimal.new(latest_price) |> Utils.multiply(grand_total_qty)
+  end
+
+  defp sell_trade(%Trade{
+         id: id,
+         from_qty: from_qty,
+         to_qty: to_qty,
+         to_asset_unit_cost: to_asset_unit_cost,
+         transacted_at: transacted_at,
+         from_asset: from_asset,
+         to_asset: to_asset
+       }) do
+    %{
+      id: id,
+      to_asset_unit_cost: to_asset_unit_cost,
+      transacted_at: transacted_at,
+      from_asset: to_asset,
+      to_asset: from_asset,
+      from_qty: to_qty,
+      to_qty: from_qty |> negate()
+    }
+  end
+
+  defp buy_trade(%Trade{
+         id: id,
+         from_qty: from_qty,
+         to_qty: to_qty,
+         to_asset_unit_cost: to_asset_unit_cost,
+         transacted_at: transacted_at,
+         from_asset: from_asset,
+         to_asset: to_asset
+       }) do
+    %{
+      id: id,
+      to_asset_unit_cost: to_asset_unit_cost,
+      transacted_at: transacted_at,
+      from_asset: from_asset,
+      to_asset: to_asset,
+      from_qty: from_qty |> negate(),
+      to_qty: to_qty
+    }
+  end
+
+  @spec process_trades(any(), boolean()) :: %{
           total_cost: Decimal.t(),
           total_qty: Decimal.t(),
           trades: [map()]
         }
-  defp process_trades(trades) do
+  defp process_trades(trades, currency?) do
     {total_cost, total_qty} =
       Enum.reduce(trades, {Decimal.new(0), Decimal.new(0)}, fn %{
                                                                  from_qty: from_qty,
@@ -279,31 +360,49 @@ defmodule Boonorbust.Ledgers do
         {total_cost |> Decimal.add(from_qty), total_qty |> Decimal.add(to_qty)}
       end)
 
-    %{trades: trades, total_cost: total_cost, total_qty: total_qty}
+    %{
+      trades: trades,
+      total_cost: total_cost,
+      total_qty:
+        if currency? do
+          total_cost
+        else
+          total_qty
+        end
+    }
   end
 
-  defp process_trades_by_from_asset(trades_by_from_asset_code, root_asset) do
+  defp process_trades_by_from_asset(trades_by_from_asset_code, root_asset, currency?) do
     local_currency = root_asset.code
 
-    Enum.reduce(trades_by_from_asset_code, {Decimal.new(0), Decimal.new(0)}, fn {from_asset_code,
-                                                                                 from_asset_calculations},
-                                                                                {grand_total_cost,
-                                                                                 grand_total_qty} ->
-      if from_asset_code == nil do
-        {grand_total_cost, grand_total_qty |> Decimal.add(from_asset_calculations.total_qty)}
-      else
-        %{to_amount: total_cost_in_local_currency} =
-          ExchangeRates.convert(
-            from_asset_code,
-            local_currency,
-            Date.utc_today(),
-            from_asset_calculations.total_cost
-          )
+    {grand_total_cost, grand_total_qty} =
+      Enum.reduce(
+        trades_by_from_asset_code,
+        {Decimal.new(0), Decimal.new(0)},
+        fn {from_asset_code, from_asset_calculations}, {grand_total_cost, grand_total_qty} ->
+          if from_asset_code == nil do
+            {grand_total_cost, grand_total_qty |> Decimal.add(from_asset_calculations.total_qty)}
+          else
+            %{to_amount: total_cost_in_local_currency} =
+              ExchangeRates.convert(
+                from_asset_code,
+                local_currency,
+                Date.utc_today(),
+                from_asset_calculations.total_cost
+              )
 
-        {grand_total_cost |> Decimal.add(total_cost_in_local_currency),
-         grand_total_qty |> Decimal.add(from_asset_calculations.total_qty)}
-      end
-    end)
+            {grand_total_cost |> Decimal.add(total_cost_in_local_currency),
+             grand_total_qty |> Decimal.add(from_asset_calculations.total_qty)}
+          end
+        end
+      )
+
+    {grand_total_cost,
+     if currency? do
+       grand_total_cost
+     else
+       grand_total_qty
+     end}
   end
 
   @spec all_non_currency_latest(integer()) :: [Ledger.t()]
@@ -450,14 +549,18 @@ defmodule Boonorbust.Ledgers do
   @spec profit_percent(integer(), list(Ledger.t())) :: Decimal.t()
   def profit_percent(_user_id, []), do: Decimal.new(0)
 
-  def profit_percent(user_id, latest_ledgers) do
-    root_asset = Assets.root(user_id)
-    total_cost = get_latest(root_asset.id).inventory_cost |> Decimal.abs()
+  def profit_percent(user_id, ledgers) do
+    # total_cost is the amount of local currency spent to acquire assets
+    root_asset = ledgers |> Enum.find(ledgers, &(&1.asset.root == true))
 
+    total_cost = root_asset.total_value_in_local_currency
+
+    # total_value is the sum of all non local currency assets
     total_value =
-      latest_ledgers
+      ledgers
+      |> Enum.reject(&(&1.asset.root == true))
       |> Enum.reduce(Decimal.new(0), fn l, acc ->
-        l.latest_value |> Decimal.add(acc)
+        l.total_value_in_local_currency |> Decimal.add(acc)
       end)
 
     profit = total_value |> Decimal.sub(total_cost)
@@ -476,12 +579,12 @@ defmodule Boonorbust.Ledgers do
     |> Decimal.round(2)
   end
 
-  @spec portfolios(integer(), list(Ledger.t())) :: list(map())
-  def portfolios(user_id, latest_ledgers) do
+  @spec portfolios(integer(), list(map())) :: list(map())
+  def portfolios(user_id, ledgers) do
     portfolios = Portfolios.all(user_id)
 
     Enum.map(portfolios, fn portfolio ->
-      tag_values = calculate_portfolio_tag_values(portfolio, latest_ledgers) |> add_percentage()
+      tag_values = calculate_portfolio_tag_values(portfolio, ledgers) |> add_percentage()
       %{name: portfolio.name, tag_values: tag_values}
     end)
   end
@@ -504,16 +607,18 @@ defmodule Boonorbust.Ledgers do
     end)
   end
 
-  @spec calculate_portfolio_tag_values(Portfolio.t(), list(Ledger.t())) :: list(map())
-  defp calculate_portfolio_tag_values(portfolio, latest_ledgers) do
+  @spec calculate_portfolio_tag_values(Portfolio.t(), list(map())) :: list(map())
+  defp calculate_portfolio_tag_values(portfolio, ledgers) do
     portfolio.tags
     |> Enum.map(fn tag ->
       asset_ids = tag.assets |> Enum.map(& &1.id)
-      relevant_ledgers = latest_ledgers |> Enum.filter(fn l -> l.asset_id in asset_ids end)
+      relevant_ledgers = ledgers |> Enum.filter(fn l -> l.asset.id in asset_ids end)
 
       tag_value =
         relevant_ledgers
-        |> Enum.reduce(Decimal.new(0), fn l, acc -> acc |> Decimal.add(l.latest_value) end)
+        |> Enum.reduce(Decimal.new(0), fn l, acc ->
+          acc |> Decimal.add(l.total_value_in_local_currency)
+        end)
 
       %{name: tag.name, value: tag_value}
     end)

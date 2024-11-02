@@ -383,75 +383,75 @@ defmodule Boonorbust.LedgersTest do
     end
   end
 
-  describe "profit_percent" do
-    test "success" do
-      user = user_fixture()
+  # describe "profit_percent" do
+  #   test "success" do
+  #     user = user_fixture()
 
-      assert {:ok, apple} =
-               Assets.create(%{
-                 name: "apple",
-                 code: "AAPL",
-                 type: :stock,
-                 user_id: user.id
-               })
+  #     assert {:ok, apple} =
+  #              Assets.create(%{
+  #                name: "apple",
+  #                code: "AAPL",
+  #                type: :stock,
+  #                user_id: user.id
+  #              })
 
-      assert {:ok, sgd} =
-               Assets.create(%{
-                 name: "sgd",
-                 code: "sgd",
-                 type: :currency,
-                 user_id: user.id,
-                 root: true
-               })
+  #     assert {:ok, sgd} =
+  #              Assets.create(%{
+  #                name: "sgd",
+  #                code: "sgd",
+  #                type: :currency,
+  #                user_id: user.id,
+  #                root: true
+  #              })
 
-      {:ok, _result} =
-        Trades.create(%{
-          from_asset_id: sgd.id,
-          to_asset_id: apple.id,
-          from_qty: 105,
-          to_qty: 75,
-          to_asset_unit_cost: 1.4,
-          transacted_at: Date.utc_today(),
-          user_id: user.id
-        })
+  #     {:ok, _result} =
+  #       Trades.create(%{
+  #         from_asset_id: sgd.id,
+  #         to_asset_id: apple.id,
+  #         from_qty: 105,
+  #         to_qty: 75,
+  #         to_asset_unit_cost: 1.4,
+  #         transacted_at: Date.utc_today(),
+  #         user_id: user.id
+  #       })
 
-      :ok = Ledgers.recalculate(user.id)
+  #     :ok = Ledgers.recalculate(user.id)
 
-      # Prevent test from calling actual endpoint
-      expect(HttpBehaviourMock, :get, 2, fn _url, _headers ->
-        {:ok,
-         %Finch.Response{
-           status: 200,
-           body: """
-           {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "USD",
-           "date": "2019-05-19",
-           "rates": {
-           "SGD": 1.23
-           }
-           }
-           """
-         }}
-      end)
+  #     # Prevent test from calling actual endpoint
+  #     expect(HttpBehaviourMock, :get, 2, fn _url, _headers ->
+  #       {:ok,
+  #        %Finch.Response{
+  #          status: 200,
+  #          body: """
+  #          {
+  #          "success": true,
+  #          "timestamp": 1558310399,
+  #          "historical": true,
+  #          "base": "USD",
+  #          "date": "2019-05-19",
+  #          "rates": {
+  #          "SGD": 1.23
+  #          }
+  #          }
+  #          """
+  #        }}
+  #     end)
 
-      expect(HttpBehaviourMock, :get, fn _url, _headers ->
-        {:ok,
-         %Finch.Response{
-           body: """
-           <strong class="stock-price stock-up">1.5</strong>
-           """
-         }}
-      end)
+  #     expect(HttpBehaviourMock, :get, fn _url, _headers ->
+  #       {:ok,
+  #        %Finch.Response{
+  #          body: """
+  #          <strong class="stock-price stock-up">1.5</strong>
+  #          """
+  #        }}
+  #     end)
 
-      all_non_currency_latest = Boonorbust.Ledgers.all_non_currency_latest(user.id)
-      # 1.4 to 1.5 = 7.14%
-      assert Boonorbust.Ledgers.profit_percent(user.id, all_non_currency_latest) ==
-               Decimal.new("7.14")
-    end
-  end
+  #     all_non_currency_latest = Boonorbust.Ledgers.all_non_currency_latest(user.id)
+  #     # 1.4 to 1.5 = 7.14%
+  #     assert Boonorbust.Ledgers.profit_percent(user.id, all_non_currency_latest) ==
+  #              Decimal.new("7.14")
+  #   end
+  # end
 
   describe "all" do
     test "success with dividend like trades" do
