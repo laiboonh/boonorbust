@@ -564,12 +564,14 @@ defmodule Boonorbust.Ledgers do
 
     total_cost =
       ledgers
-      |> Enum.filter(&(&1.total_cost_in_local_currency |> Decimal.lt?(Decimal.new(0))))
+      |> Enum.filter(&(&1.total_cost_in_local_currency |> Decimal.gt?(Decimal.new(0))))
       |> Enum.reduce(Decimal.new(0), fn l, acc ->
         l.total_cost_in_local_currency |> Decimal.add(acc)
       end)
       |> Decimal.add(root_asset.total_value_in_local_currency)
       |> Decimal.abs()
+
+    Logger.info("Total Cost: #{total_cost}")
 
     # total_value is the sum of cost of all non local currency assets
     total_value =
@@ -578,6 +580,8 @@ defmodule Boonorbust.Ledgers do
       |> Enum.reduce(Decimal.new(0), fn l, acc ->
         l.total_value_in_local_currency |> Decimal.add(acc)
       end)
+
+    Logger.info("Total Value: #{total_value}")
 
     profit = total_value |> Decimal.sub(total_cost)
 
