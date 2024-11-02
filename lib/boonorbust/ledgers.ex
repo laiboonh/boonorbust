@@ -569,6 +569,7 @@ defmodule Boonorbust.Ledgers do
         l.total_cost_in_local_currency |> Decimal.add(acc)
       end)
       |> Decimal.add(root_asset.total_value_in_local_currency)
+      |> Decimal.abs()
 
     # total_value is the sum of cost of all non local currency assets
     total_value =
