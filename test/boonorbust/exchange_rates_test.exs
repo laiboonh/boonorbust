@@ -59,4 +59,29 @@ defmodule Boonorbust.ExchangeRatesTest do
                %{rate_used: Decimal.new("23.126908"), to_amount: Decimal.new("2312.690800")}
     end
   end
+
+  describe "save_exchange_rate" do
+    test "success" do
+      Boonorbust.ExchangeRates.save_exchange_rate(
+        "sgd",
+        "usd",
+        ~D[2024-01-01],
+        Decimal.from_float(1.23)
+      )
+
+      Boonorbust.ExchangeRates.save_exchange_rate(
+        "sgd",
+        "usd",
+        ~D[2024-01-01],
+        Decimal.from_float(1.23)
+      )
+
+      assert Boonorbust.ExchangeRates.get_exchange_rate(
+               "sgd",
+               "usd",
+               ~D[2024-01-01]
+             ) ==
+               Decimal.from_float(1.23)
+    end
+  end
 end

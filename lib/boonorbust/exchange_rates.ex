@@ -68,6 +68,10 @@ defmodule Boonorbust.ExchangeRates do
       date: date,
       rate: rate
     })
-    |> Repo.insert!()
+    |> Ecto.Changeset.apply_action!(:insert)
+    |> Repo.insert!(
+      on_conflict: [set: [rate: rate]],
+      conflict_target: [:from_currency, :to_currency, :date]
+    )
   end
 end
