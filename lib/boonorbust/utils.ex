@@ -3,7 +3,11 @@ defmodule Boonorbust.Utils do
 
   @spec divide(Decimal.t(), Decimal.t()) :: Decimal.t()
   def divide(one, two) do
-    one |> Decimal.div(two) |> Decimal.round(@scale)
+    if two |> Decimal.eq?(Decimal.new(0)) do
+      Decimal.new(0)
+    else
+      one |> Decimal.div(two) |> Decimal.round(@scale)
+    end
   end
 
   @spec multiply(Decimal.t(), Decimal.t()) :: Decimal.t()

@@ -6,6 +6,10 @@ defmodule Boonorbust.UtilsTest do
     test "success" do
       assert Utils.divide(Decimal.new("100"), Decimal.new("3")) == Decimal.new("33.333333")
     end
+
+    test "success when divide by zero" do
+      assert Utils.divide(Decimal.new("100"), Decimal.new("0.00")) == Decimal.new("0")
+    end
   end
 
   describe "multiply" do
