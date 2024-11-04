@@ -1,75 +1,79 @@
 defmodule Boonorbust.Trades do
   import Ecto.Query, warn: false
 
+  alias Boonorbust.Assets
   alias Boonorbust.Assets.Asset
+  alias Boonorbust.ExchangeRates
+  alias Boonorbust.Ledgers
   alias Boonorbust.Repo
   alias Boonorbust.Trades.Trade
   alias Ecto.Multi
 
-  @spec create(%{atom => any()}, boolean()) ::
-          {:ok, any()} | {:error, any()} | Ecto.Multi.failure()
-  def create(attrs, auto_create \\ false) do
+  @spec create(%{atom => any()}) :: {:ok, any()} | {:error, any()} | Ecto.Multi.failure()
+  def create(attrs) do
     multi =
-      if auto_create do
-        Multi.new()
-        # |> Multi.run(:auto_create, fn _repo, _changes -> maybe_auto_create_trade(attrs) end)
-        |> Multi.insert(
-          :insert,
-          %Trade{}
-          |> Trade.changeset(attrs)
-        )
-
-        # |> Multi.run(:record, fn _repo, %{insert: trade} -> Ledgers.record(trade) end)
-      else
-        Multi.new()
-        |> Multi.insert(
-          :insert,
-          %Trade{}
-          |> Trade.changeset(attrs)
-        )
-
-        # |> Multi.run(:record, fn _repo, %{insert: trade} -> Ledgers.record(trade) end)
-      end
+      Multi.new()
+      |> Multi.run(:currency_exchange, fn _repo, _changes ->
+        maybe_create_currency_exchange_trade(attrs)
+      end)
+      |> Multi.insert(
+        :insert,
+        %Trade{}
+        |> Trade.changeset(attrs)
+      )
 
     Repo.transaction(multi)
   end
 
-  # @spec maybe_auto_create_trade(map()) :: {:ok, Trade.t() | nil} | {:error, Changeset.t()}
-  # defp maybe_auto_create_trade(%{
-  #        from_asset_id: from_asset_id,
-  #        from_qty: from_qty,
-  #        to_asset_id: to_asset_id,
-  #        user_id: user_id,
-  #        transacted_at: transacted_at
-  #      }) do
-  #   root_asset = Assets.root(user_id)
-  #   from_asset = Assets.get(from_asset_id, user_id)
+  defp maybe_create_currency_exchange_trade(%{
+         from_asset_id: from_asset_id,
+         from_qty: from_qty,
+         transacted_at: transacted_at,
+         user_id: user_id
+       }) do
+    from_asset = if from_asset_id == nil, do: nil, else: Assets.get(from_asset_id, user_id)
+    local_currency = Assets.root(user_id)
 
-  #   if from_asset_id != root_asset.id && to_asset_id != root_asset.id &&
-  #        from_asset.type == :currency do
-  #     to_asset_id = from_asset_id
-  #     to_asset = from_asset
+    if from_asset != nil && from_asset.type == :currency && from_asset.id != local_currency.id do
+      foreign_currency = from_asset
+      foreign_currency_amount_needed = from_qty
 
-  #     exchange_rate =
-  #       ExchangeRates.get_exchange_rate(root_asset.code, to_asset.code, transacted_at)
+      [{_foreign_currency_name, %{total_qty: foreign_currency_amount_held}}] =
+        Ledgers.all(user_id, foreign_currency.id).trades_by_from_asset_code
 
-  #     to_qty = from_qty
+      if Decimal.gt?(foreign_currency_amount_held, foreign_currency_amount_needed) ||
+           Decimal.eq?(foreign_currency_amount_held, foreign_currency_amount_needed) do
+        # Enough foreign currency to support trade. No exchange needed
+        {:ok, nil}
+      else
+        # Not enough, how much more is neded?
+        foreign_currency_amount_needed =
+          foreign_currency_amount_needed |> Decimal.sub(foreign_currency_amount_held)
 
-  #     from_qty = Boonorbust.Utils.divide(Decimal.new(to_qty), exchange_rate)
+        exchange_rate =
+          ExchangeRates.get_exchange_rate(
+            local_currency.code,
+            foreign_currency.code,
+            transacted_at
+          )
 
-  #     create(%{
-  #       from_asset_id: root_asset.id,
-  #       to_asset_id: to_asset_id,
-  #       from_qty: from_qty,
-  #       to_qty: to_qty,
-  #       to_asset_unit_cost: exchange_rate,
-  #       transacted_at: transacted_at,
-  #       user_id: user_id
-  #     })
-  #   else
-  #     {:ok, nil}
-  #   end
-  # end
+        local_currency_amount_needed =
+          Boonorbust.Utils.divide(foreign_currency_amount_needed, exchange_rate)
+
+        create(%{
+          from_asset_id: local_currency.id,
+          to_asset_id: foreign_currency.id,
+          from_qty: local_currency_amount_needed,
+          to_qty: foreign_currency_amount_needed,
+          to_asset_unit_cost: exchange_rate,
+          transacted_at: transacted_at,
+          user_id: user_id
+        })
+      end
+    else
+      {:ok, nil}
+    end
+  end
 
   @spec get(integer(), integer()) :: Trade.t() | nil
   def get(id, user_id) do

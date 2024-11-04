@@ -199,8 +199,7 @@ defmodule Boonorbust.Ledgers do
   @spec all(integer(), integer()) :: map()
   def all(user_id, asset_id) do
     root_asset = Assets.root(user_id)
-    asset = Assets.get(asset_id, user_id)
-    currency? = asset.type == :currency
+    currency? = Assets.currency?(asset_id)
 
     trades_by_from_asset_code =
       normalize_trades(user_id, asset_id, currency?)

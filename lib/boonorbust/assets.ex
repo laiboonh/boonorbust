@@ -43,6 +43,16 @@ defmodule Boonorbust.Assets do
     |> Repo.delete()
   end
 
+  @spec currency?(integer()) :: boolean()
+  def currency?(asset_id) do
+    asset =
+      Asset
+      |> where([a], a.id == ^asset_id)
+      |> Repo.one()
+
+    asset.type == :currency
+  end
+
   @spec root(integer()) :: Asset.t() | nil
   def root(user_id) do
     Asset

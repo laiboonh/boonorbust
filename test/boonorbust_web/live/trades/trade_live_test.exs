@@ -49,13 +49,13 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
 
       {:ok, %{insert: trade}} =
         Trades.create(%{
-          "from_asset_id" => from_asset.id,
-          "from_qty" => 1,
-          "to_asset_id" => to_asset.id,
-          "to_qty" => 1,
-          "user_id" => user.id,
-          "to_asset_unit_cost" => 1,
-          "transacted_at" => "2024-03-15"
+          from_asset_id: from_asset.id,
+          from_qty: 1,
+          to_asset_id: to_asset.id,
+          to_qty: 1,
+          user_id: user.id,
+          to_asset_unit_cost: 1,
+          transacted_at: "2024-03-15"
         })
 
       {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/trades/#{trade.id}")
@@ -84,13 +84,13 @@ defmodule BoonorbustWeb.Trades.TradeLiveTest do
 
       {:ok, %{insert: trade}} =
         Trades.create(%{
-          "from_asset_id" => from_asset.id,
-          "from_qty" => 1,
-          "to_asset_id" => to_asset.id,
-          "to_qty" => 1,
-          "user_id" => user.id,
-          "to_asset_unit_cost" => 1,
-          "transacted_at" => "2024-03-15"
+          from_asset_id: from_asset.id,
+          from_qty: 1,
+          to_asset_id: to_asset.id,
+          to_qty: 1,
+          user_id: user.id,
+          to_asset_unit_cost: 1,
+          transacted_at: "2024-03-15"
         })
 
       {:ok, lv, _html} = conn |> log_in_user(user) |> live(~p"/trades")

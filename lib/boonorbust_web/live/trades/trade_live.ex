@@ -42,13 +42,6 @@ defmodule BoonorbustWeb.Trades.TradeLive do
           />
           <.input field={@trade_form[:transacted_at]} label="Transacted At" type="date" required />
           <.input field={@trade_form[:note]} label="Note" />
-          <%= if @action == "insert" do %>
-            <.input
-              field={@trade_form[:auto_create]}
-              type="checkbox"
-              label="Auto Create Local Currency to From Asset Trade"
-            />
-          <% end %>
           <:actions>
             <.button phx-disable-with="..."><%= @action |> String.capitalize() %></.button>
           </:actions>
@@ -205,31 +198,27 @@ defmodule BoonorbustWeb.Trades.TradeLive do
         "to_qty" => to_qty,
         "to_asset_unit_cost" => to_asset_unit_cost,
         "transacted_at" => transacted_at,
-        "note" => note,
-        "auto_create" => auto_create
+        "note" => note
       }
     } = params
 
     socket =
-      case Trades.create(
-             %{
-               from_asset_id:
-                 if !Boonorbust.Utils.empty_string?(from_asset_id) do
-                   String.to_integer(from_asset_id)
-                 end,
-               from_qty: from_qty,
-               to_asset_id:
-                 if !Boonorbust.Utils.empty_string?(to_asset_id) do
-                   String.to_integer(to_asset_id)
-                 end,
-               to_qty: to_qty,
-               user_id: user_id,
-               to_asset_unit_cost: to_asset_unit_cost,
-               transacted_at: transacted_at,
-               note: note
-             },
-             auto_create == "true"
-           ) do
+      case Trades.create(%{
+             from_asset_id:
+               if !Boonorbust.Utils.empty_string?(from_asset_id) do
+                 String.to_integer(from_asset_id)
+               end,
+             from_qty: from_qty,
+             to_asset_id:
+               if !Boonorbust.Utils.empty_string?(to_asset_id) do
+                 String.to_integer(to_asset_id)
+               end,
+             to_qty: to_qty,
+             user_id: user_id,
+             to_asset_unit_cost: to_asset_unit_cost,
+             transacted_at: transacted_at,
+             note: note
+           }) do
         {:ok, %{insert: trade}} ->
           socket
           |> refresh_table(params)
