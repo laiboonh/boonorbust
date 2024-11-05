@@ -561,14 +561,7 @@ defmodule Boonorbust.Ledgers do
     # total_cost is the amount of local currency spent to acquire assets + positive cost of assets if any
     root_asset = ledgers |> Enum.find(ledgers, &(&1.asset.root == true))
 
-    total_cost =
-      ledgers
-      |> Enum.filter(&(&1.total_cost_in_local_currency |> Decimal.gt?(Decimal.new(0))))
-      |> Enum.reduce(Decimal.new(0), fn l, acc ->
-        l.total_cost_in_local_currency |> Decimal.add(acc)
-      end)
-      |> Decimal.add(root_asset.total_value_in_local_currency)
-      |> Decimal.abs()
+    total_cost = root_asset.total_value_in_local_currency |> Decimal.abs()
 
     Logger.info("Total Cost: #{total_cost}")
 
