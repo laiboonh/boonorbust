@@ -558,14 +558,14 @@ defmodule Boonorbust.Ledgers do
   def profit_percent(_user_id, []), do: Decimal.new(0)
 
   def profit_percent(user_id, ledgers) do
-    # total_cost is the amount of local currency spent to acquire assets + positive cost of assets if any
+    # total_cost is the amount of local currency spent to acquire assets
     root_asset = ledgers |> Enum.find(ledgers, &(&1.asset.root == true))
 
     total_cost = root_asset.total_value_in_local_currency |> Decimal.abs()
 
     Logger.info("Total Cost: #{total_cost}")
 
-    # total_value is the sum of cost of all non local currency assets
+    # total_value is the sum of value of all non local currency assets
     total_value =
       ledgers
       |> Enum.reject(&(&1.asset.root == true))

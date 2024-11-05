@@ -131,7 +131,7 @@ defmodule BoonorbustWeb.PageLive do
      )}
   end
 
-  def sort_ledgers(ledgers, sort_by, asc) do
+  defp sort_ledgers(ledgers, sort_by, asc) do
     if sort_by == :name do
       order = if asc, do: :asc, else: :desc
 
