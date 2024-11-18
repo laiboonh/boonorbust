@@ -554,10 +554,8 @@ defmodule Boonorbust.Ledgers do
 
   defp latest_price(_root_asset, %Asset{type: :currency}), do: "1" |> Decimal.new()
 
-  @spec profit_percent(integer(), list(Ledger.t())) :: Decimal.t()
-  def profit_percent(_user_id, []), do: Decimal.new(0)
-
-  def profit_percent(user_id, ledgers) do
+  @spec total_value_total_cost(list(Ledger.t())) :: {Decimal.t(), Decimal.t()}
+  def total_value_total_cost(ledgers) do
     # total_cost is the amount of local currency spent to acquire assets
     root_asset = ledgers |> Enum.find(ledgers, &(&1.asset.root == true))
 
@@ -575,6 +573,36 @@ defmodule Boonorbust.Ledgers do
 
     Logger.info("Total Value: #{total_value}")
 
+    {total_value, total_cost}
+  end
+
+  @spec calculate_value_percent(list(map()), Decimal.t()) :: list(map())
+  def calculate_value_percent(ledgers, total_value) do
+    ledgers
+    |> Enum.map(fn l ->
+      %{
+        total_value_in_local_currency: total_value_in_local_currency
+      } = l
+
+      # In theory only the root aset will have -ve value
+      value_percent =
+        if l.asset.root == true do
+          Decimal.new(0)
+        else
+          total_value_in_local_currency
+          |> Decimal.div(total_value)
+          |> Utils.multiply(Decimal.new(100))
+          |> Decimal.round(2)
+        end
+
+      l |> Map.put_new(:value_percent, value_percent)
+    end)
+  end
+
+  @spec profit_percent(integer(), list(Ledger.t())) :: Decimal.t()
+  def profit_percent(_user_id, []), do: Decimal.new(0)
+
+  def profit_percent(user_id, total_value, total_cost) do
     profit = total_value |> Decimal.sub(total_cost)
 
     _profit =

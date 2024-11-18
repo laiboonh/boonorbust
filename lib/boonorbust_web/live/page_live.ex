@@ -64,6 +64,12 @@ defmodule BoonorbustWeb.PageLive do
         >
           <%= ledger.profit_percent %>
         </:col>
+        <:col
+          :let={ledger}
+          label="<span phx-click='sort' phx-value-sort_by='value_percent'>Value %</span>"
+        >
+          <%= ledger.value_percent %>
+        </:col>
       </.table>
     <% end %>
     """
@@ -103,11 +109,15 @@ defmodule BoonorbustWeb.PageLive do
   def handle_info({:task_done, ledgers}, socket) do
     user_id = socket.assigns.current_user.id
 
+    {total_value, total_cost} = Ledgers.total_value_total_cost(ledgers)
+
+    ledgers = Ledgers.calculate_value_percent(ledgers, total_value)
+
     socket =
       socket
       |> assign(loading_all_assets: false)
       |> assign(:ledgers, sort_ledgers(ledgers, socket.assigns.sort_by, socket.assigns.asc))
-      |> assign(:profit_percent, Ledgers.profit_percent(user_id, ledgers))
+      |> assign(:profit_percent, Ledgers.profit_percent(user_id, total_value, total_cost))
       |> assign(
         :portfolio_svgs,
         Ledgers.portfolios(user_id, ledgers) |> Enum.map(&portfolio_to_svg(&1))
