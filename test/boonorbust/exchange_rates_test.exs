@@ -12,14 +12,11 @@ defmodule Boonorbust.ExchangeRatesTest do
            status: 200,
            body: """
            {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "SGD",
-           "date": "2019-05-19",
-           "rates": {
-           "THB": 23.126908
-           }
+           "data": {
+            "2019-05-19": {
+                "THB": 23.126908
+              }
+            }
            }
            """
          }}
@@ -28,9 +25,7 @@ defmodule Boonorbust.ExchangeRatesTest do
       assert Boonorbust.ExchangeRates.convert("SGD", "THB", ~D[2019-05-19], Decimal.new("100")) ==
                %{rate_used: Decimal.new("23.126908"), to_amount: Decimal.new("2312.690800")}
 
-      assert Boonorbust.ExchangeRates.convert("SGD", "THB", ~D[2019-05-19], Decimal.new("100")) ==
-               %{rate_used: Decimal.new("23.126908"), to_amount: Decimal.new("2312.690800")}
-
+      # EXtra calls won't trigger another api call
       assert Boonorbust.ExchangeRates.convert("SGD", "THB", ~D[2019-05-19], Decimal.new("100")) ==
                %{rate_used: Decimal.new("23.126908"), to_amount: Decimal.new("2312.690800")}
     end

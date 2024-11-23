@@ -37,15 +37,16 @@ defmodule Boonorbust.ExchangeRates do
 
   @spec get_exchange_rate_from_api(String.t(), String.t(), Date.t()) :: ExchangeRate.t() | nil
   defp get_exchange_rate_from_api(from_currency, to_currency, date) do
+    from_currency = from_currency |> String.upcase()
+    to_currency = to_currency |> String.upcase()
     Logger.info("get_exchange_rate_from_api #{from_currency} #{to_currency}")
 
     {:ok, %Finch.Response{status: 200, body: body}} =
       Boonorbust.Http.get(
-        "https://api.apilayer.com/exchangerates_data/#{date}?symbols=#{to_currency}&base=#{from_currency}",
-        [{"apikey", Application.get_env(:boonorbust, :exchange_rate_api_key)}]
+        "https://api.freecurrencyapi.com/v1/historical?apikey=#{Application.get_env(:boonorbust, :exchange_rate_api_key)}&date=#{date}&base_currency=#{from_currency}&currencies=#{to_currency}"
       )
 
-    rate = Jason.decode!(body)["rates"][to_currency]
+    rate = Jason.decode!(body)["data"][date |> Date.to_string()][to_currency]
 
     save_exchange_rate(from_currency, to_currency, date, rate)
   end

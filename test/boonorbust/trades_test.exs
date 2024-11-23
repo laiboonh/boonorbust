@@ -44,14 +44,11 @@ defmodule Boonorbust.TradesTest do
            status: 200,
            body: """
            {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "USD",
-           "date": "2019-05-19",
-           "rates": {
-           "SGD": 1.25
-           }
+           "data": {
+            "#{Date.utc_today()}": {
+                "SGD": 1.25
+              }
+            }
            }
            """
          }}
@@ -117,14 +114,11 @@ defmodule Boonorbust.TradesTest do
            status: 200,
            body: """
            {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "USD",
-           "date": "2019-05-19",
-           "rates": {
-           "SGD": 1.25
-           }
+           "data": {
+            "#{Date.utc_today()}": {
+                "SGD": 1.25
+              }
+            }
            }
            """
          }}
@@ -184,22 +178,17 @@ defmodule Boonorbust.TradesTest do
           user_id: user.id
         })
 
-      expect(HttpBehaviourMock, :get, fn url, _headers ->
-        assert url |> String.ends_with?("base=USD")
-
+      expect(HttpBehaviourMock, :get, fn _url, _headers ->
         {:ok,
          %Finch.Response{
            status: 200,
            body: """
            {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "USD",
-           "date": "2019-05-19",
-           "rates": {
-           "SGD": 1.25
-           }
+           "data": {
+            "#{Date.utc_today()}": {
+                "SGD": 1.25
+              }
+            }
            }
            """
          }}
@@ -262,14 +251,11 @@ defmodule Boonorbust.TradesTest do
            status: 200,
            body: """
            {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "USD",
-           "date": "2019-05-19",
-           "rates": {
-           "SGD": 1.25
-           }
+           "data": {
+            "#{Date.utc_today()}": {
+                "SGD": 1.25
+              }
+            }
            }
            """
          }}

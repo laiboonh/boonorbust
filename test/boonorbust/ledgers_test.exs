@@ -293,14 +293,11 @@ defmodule Boonorbust.LedgersTest do
            status: 200,
            body: """
            {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "USD",
-           "date": "2019-05-19",
-           "rates": {
-           "SGD": 1.23
-           }
+           "data": {
+            "#{Date.utc_today()}": {
+                "SGD": 1.23
+              }
+            }
            }
            """
          }}
@@ -349,14 +346,11 @@ defmodule Boonorbust.LedgersTest do
            status: 200,
            body: """
            {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "USD",
-           "date": "2019-05-19",
-           "rates": {
-           "SGD": 1.23
-           }
+           "data": {
+            "#{Date.utc_today()}": {
+                "SGD": 1.23
+              }
+            }
            }
            """
          }}
@@ -560,14 +554,11 @@ defmodule Boonorbust.LedgersTest do
            status: 200,
            body: """
            {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "ETH",
-           "date": "2019-05-19",
-           "rates": {
-           "SGD": 1.2
-           }
+           "data": {
+            "#{Date.utc_today()}": {
+                "SGD": 1.2
+              }
+            }
            }
            """
          }}
@@ -638,14 +629,11 @@ defmodule Boonorbust.LedgersTest do
            status: 200,
            body: """
            {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "USD",
-           "date": "2019-05-19",
-           "rates": {
-           "SGD": 1.2
-           }
+           "data": {
+            "#{Date.utc_today()}": {
+                "SGD": 1.2
+              }
+            }
            }
            """
          }}
