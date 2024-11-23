@@ -18,7 +18,7 @@ defmodule Boonorbust.ExchangeRates do
   end
 
   @spec get_exchange_rate(String.t(), String.t(), Date.t()) :: Decimal.t()
-  def get_exchange_rate(from_currency, to_currency, date) do
+  defp get_exchange_rate(from_currency, to_currency, date) do
     from_currency = from_currency |> String.upcase()
     to_currency = to_currency |> String.upcase()
 
@@ -52,6 +52,8 @@ defmodule Boonorbust.ExchangeRates do
 
   @spec get_exchange_rate_from_db(String.t(), String.t(), Date.t()) :: ExchangeRate.t() | nil
   defp get_exchange_rate_from_db(from_currency, to_currency, date) do
+    Logger.info("get_exchange_rate_from_db")
+
     Repo.one(
       from er in ExchangeRate,
         where:
@@ -61,7 +63,7 @@ defmodule Boonorbust.ExchangeRates do
   end
 
   @spec save_exchange_rate(String.t(), String.t(), Date.t(), Decimal.t()) :: ExchangeRate.t()
-  def save_exchange_rate(from_currency, to_currency, date, rate) do
+  defp save_exchange_rate(from_currency, to_currency, date, rate) do
     ExchangeRate.changeset(%ExchangeRate{}, %{
       from_currency: from_currency,
       to_currency: to_currency,

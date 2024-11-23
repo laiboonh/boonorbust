@@ -285,11 +285,11 @@ defmodule Boonorbust.Ledgers do
   defp get_total_value_in_local_currency(user_id, asset, grand_total_qty) do
     root_asset = Assets.root(user_id)
 
-    usd_local_currency =
-      Boonorbust.ExchangeRates.get_exchange_rate("usd", root_asset.code, Date.utc_today())
+    %{to_amount: _to_amount, rate_used: usd_local_currency} =
+      Boonorbust.ExchangeRates.convert("usd", root_asset.code, Date.utc_today(), Decimal.new(1))
 
-    hkd_local_currency =
-      Boonorbust.ExchangeRates.get_exchange_rate("hkd", root_asset.code, Date.utc_today())
+    %{to_amount: _to_amount, rate_used: hkd_local_currency} =
+      Boonorbust.ExchangeRates.convert("hkd", root_asset.code, Date.utc_today(), Decimal.new(1))
 
     latest_price = latest_price(root_asset, asset)
 
@@ -433,8 +433,11 @@ defmodule Boonorbust.Ledgers do
   defp calculate_price_value_profit(latest, user_id) do
     root_asset = Assets.root(user_id)
 
-    usdsgd = Boonorbust.ExchangeRates.get_exchange_rate("usd", "sgd", Date.utc_today())
-    hkdsgd = Boonorbust.ExchangeRates.get_exchange_rate("hkd", "sgd", Date.utc_today())
+    %{to_amount: _to_amount, rate_used: usdsgd} =
+      Boonorbust.ExchangeRates.convert("usd", "sgd", Date.utc_today(), Decimal.new(1))
+
+    %{to_amount: _to_amount, rate_used: hkdsgd} =
+      Boonorbust.ExchangeRates.convert("hkd", "sgd", Date.utc_today(), Decimal.new(1))
 
     latest
     |> Enum.map(fn ledger ->

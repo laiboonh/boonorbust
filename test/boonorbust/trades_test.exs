@@ -205,27 +205,6 @@ defmodule Boonorbust.TradesTest do
          }}
       end)
 
-      expect(HttpBehaviourMock, :get, fn url, _headers ->
-        assert url |> String.ends_with?("base=SGD")
-
-        {:ok,
-         %Finch.Response{
-           status: 200,
-           body: """
-           {
-           "success": true,
-           "timestamp": 1558310399,
-           "historical": true,
-           "base": "SGD",
-           "date": "2019-05-19",
-           "rates": {
-           "USD": 0.8
-           }
-           }
-           """
-         }}
-      end)
-
       {:ok, _trade} =
         Trades.create(%{
           from_asset_id: usd.id,

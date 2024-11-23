@@ -50,22 +50,20 @@ defmodule Boonorbust.Trades do
         foreign_currency_amount_needed =
           foreign_currency_amount_needed |> Decimal.sub(foreign_currency_amount_held)
 
-        exchange_rate =
-          ExchangeRates.get_exchange_rate(
-            local_currency.code,
+        %{to_amount: local_currency_amount_needed, rate_used: exchange_rate_used} =
+          ExchangeRates.convert(
             foreign_currency.code,
-            transacted_at
+            local_currency.code,
+            transacted_at,
+            foreign_currency_amount_needed
           )
-
-        local_currency_amount_needed =
-          Boonorbust.Utils.divide(foreign_currency_amount_needed, exchange_rate)
 
         create(%{
           from_asset_id: local_currency.id,
           to_asset_id: foreign_currency.id,
           from_qty: local_currency_amount_needed,
           to_qty: foreign_currency_amount_needed,
-          to_asset_unit_cost: exchange_rate,
+          to_asset_unit_cost: exchange_rate_used,
           transacted_at: transacted_at,
           user_id: user_id
         })
