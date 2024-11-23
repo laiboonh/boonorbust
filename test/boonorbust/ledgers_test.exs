@@ -294,9 +294,7 @@ defmodule Boonorbust.LedgersTest do
            body: """
            {
            "data": {
-            "#{Date.utc_today()}": {
-                "SGD": 1.23
-              }
+              "SGD": 1.23
             }
            }
            """
@@ -347,9 +345,7 @@ defmodule Boonorbust.LedgersTest do
            body: """
            {
            "data": {
-            "#{Date.utc_today()}": {
-                "SGD": 1.23
-              }
+              "SGD": 1.23
             }
            }
            """
@@ -555,9 +551,7 @@ defmodule Boonorbust.LedgersTest do
            body: """
            {
            "data": {
-            "#{Date.utc_today()}": {
-                "SGD": 1.2
-              }
+              "SGD": 1.2
             }
            }
            """
@@ -630,9 +624,7 @@ defmodule Boonorbust.LedgersTest do
            body: """
            {
            "data": {
-            "#{Date.utc_today()}": {
-                "SGD": 1.2
-              }
+              "SGD": 1.2
             }
            }
            """

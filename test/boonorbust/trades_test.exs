@@ -45,9 +45,7 @@ defmodule Boonorbust.TradesTest do
            body: """
            {
            "data": {
-            "#{Date.utc_today()}": {
-                "SGD": 1.25
-              }
+              "SGD": 1.25
             }
            }
            """
@@ -115,9 +113,7 @@ defmodule Boonorbust.TradesTest do
            body: """
            {
            "data": {
-            "#{Date.utc_today()}": {
-                "SGD": 1.25
-              }
+              "SGD": 1.25
             }
            }
            """
@@ -185,9 +181,7 @@ defmodule Boonorbust.TradesTest do
            body: """
            {
            "data": {
-            "#{Date.utc_today()}": {
-                "SGD": 1.25
-              }
+              "SGD": 1.25
             }
            }
            """
@@ -252,9 +246,7 @@ defmodule Boonorbust.TradesTest do
            body: """
            {
            "data": {
-            "#{Date.utc_today()}": {
-                "SGD": 1.25
-              }
+              "SGD": 1.25
             }
            }
            """
