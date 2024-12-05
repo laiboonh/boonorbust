@@ -78,16 +78,14 @@ defmodule BoonorbustWeb.PageLive do
   def mount(_params, _session, socket) do
     self = self()
 
-    if connected?(socket) do
-      user_id = socket.assigns.current_user.id
+    user_id = socket.assigns.current_user.id
 
-      {:ok, _pid} =
-        Task.start_link(fn ->
-          send(self, :working)
-          ledgers = Ledgers.all(user_id)
-          send(self, {:task_done, ledgers})
-        end)
-    end
+    {:ok, _pid} =
+      Task.start_link(fn ->
+        send(self, :working)
+        ledgers = Ledgers.all(user_id)
+        send(self, {:task_done, ledgers})
+      end)
 
     socket =
       socket
