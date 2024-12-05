@@ -3,45 +3,46 @@ defmodule BoonorbustWeb.PageLive do
 
   alias Boonorbust.Ledgers
   alias Boonorbust.Profits
+  alias Phoenix.LiveView.AsyncResult
 
   def render(assigns) do
     ~H"""
-    <%= if @loading_all_assets do %>
+    <%= if @ledgers.loading do %>
       <.spinner text="Loading all assets..." />
     <% end %>
 
-    <%= if @profit_percent do %>
-      <%= if @profit_percent |> Decimal.positive?() do %>
+    <%= if profit_percent = @profit_percent.ok? && @profit_percent.result do %>
+      <%= if profit_percent |> Decimal.positive?() do %>
         <p
           phx-click={show_modal("profit-svg-modal")}
           class="text-green-700 text-2xl underline decoration-double text-right"
         >
-          <%= @profit_percent %>%
+          <%= profit_percent %>%
         </p>
       <% else %>
         <p
           phx-click={show_modal("profit-svg-modal")}
           class="text-red-700 text-2xl underline decoration-double text-right"
         >
-          <%= @profit_percent %>%
+          <%= profit_percent %>%
         </p>
       <% end %>
     <% end %>
 
     <.modal id="profit-svg-modal">
-      <%= if @profit_svg do %>
-        <%= @profit_svg %>
+      <%= if profit_svg = @profit_svg.ok? && @profit_svg.result do %>
+        <%= profit_svg %>
       <% end %>
     </.modal>
 
-    <%= if @portfolio_svgs do %>
-      <%= for portfolio_svg <- @portfolio_svgs do %>
+    <%= if portfolio_svgs = @portfolio_svgs.ok? && @portfolio_svgs.result do %>
+      <%= for portfolio_svg <- portfolio_svgs do %>
         <%= portfolio_svg %>
       <% end %>
     <% end %>
 
-    <%= if @ledgers do %>
-      <.table id="ledgers" rows={@ledgers}>
+    <%= if ledgers = @ledgers.ok? && @ledgers.result do %>
+      <.table id="ledgers" rows={ledgers}>
         <:col :let={ledger} label="<span phx-click='sort' phx-value-sort_by='name'>Name</span>">
           <%= ledger.asset.name %><br />
           <p class="text-slate-400"><%= ledger.asset.code %></p>
@@ -76,26 +77,33 @@ defmodule BoonorbustWeb.PageLive do
   end
 
   def mount(_params, _session, socket) do
-    self = self()
-
     user_id = socket.assigns.current_user.id
-
-    {:ok, _pid} =
-      Task.start_link(fn ->
-        send(self, :working)
-        ledgers = Ledgers.all(user_id)
-        send(self, {:task_done, ledgers})
-      end)
 
     socket =
       socket
-      |> assign(:loading_all_assets, nil)
-      |> assign(:ledgers, nil)
-      |> assign(:profit_percent, nil)
-      |> assign(:portfolio_svgs, nil)
-      |> assign(:profit_svg, nil)
       |> assign(:sort_by, :profit_percent)
       |> assign(:asc, true)
+      |> assign_async([:ledgers, :profit_percent, :portfolio_svgs, :profit_svg], fn ->
+        ledgers = Ledgers.all(user_id)
+
+        {total_value, total_cost} = Ledgers.total_value_total_cost(ledgers)
+
+        ledgers = Ledgers.calculate_value_percent(ledgers, total_value)
+
+        profit_percent = Ledgers.profit_percent(user_id, total_value, total_cost)
+
+        portfolio_svgs = Ledgers.portfolios(user_id, ledgers) |> Enum.map(&portfolio_to_svg(&1))
+
+        profit_svg = Profits.all(user_id) |> profit_svg()
+
+        {:ok,
+         %{
+           ledgers: ledgers,
+           profit_percent: profit_percent,
+           portfolio_svgs: portfolio_svgs,
+           profit_svg: profit_svg
+         }}
+      end)
 
     {:ok, socket}
   end
@@ -104,30 +112,9 @@ defmodule BoonorbustWeb.PageLive do
     {:noreply, assign(socket, loading_all_assets: true)}
   end
 
-  def handle_info({:task_done, ledgers}, socket) do
-    user_id = socket.assigns.current_user.id
-
-    {total_value, total_cost} = Ledgers.total_value_total_cost(ledgers)
-
-    ledgers = Ledgers.calculate_value_percent(ledgers, total_value)
-
-    socket =
-      socket
-      |> assign(loading_all_assets: false)
-      |> assign(:ledgers, sort_ledgers(ledgers, socket.assigns.sort_by, socket.assigns.asc))
-      |> assign(:profit_percent, Ledgers.profit_percent(user_id, total_value, total_cost))
-      |> assign(
-        :portfolio_svgs,
-        Ledgers.portfolios(user_id, ledgers) |> Enum.map(&portfolio_to_svg(&1))
-      )
-      |> assign(:profit_svg, Profits.all(user_id) |> profit_svg())
-
-    {:noreply, socket}
-  end
-
   def handle_event("sort", %{"sort_by" => sort_by}, socket) do
     sort_by = sort_by |> String.to_atom()
-    ledgers = socket.assigns.ledgers
+    ledgers_async_result = socket.assigns.ledgers
     asc = !socket.assigns.asc
 
     {:noreply,
@@ -135,7 +122,11 @@ defmodule BoonorbustWeb.PageLive do
      |> assign(
        sort_by: sort_by,
        asc: asc,
-       ledgers: sort_ledgers(ledgers, sort_by, asc)
+       ledgers:
+         AsyncResult.ok(
+           ledgers_async_result,
+           sort_ledgers(ledgers_async_result.result, sort_by, asc)
+         )
      )}
   end
 
