@@ -79,16 +79,20 @@ defmodule BoonorbustWeb.PageLive do
   def mount(_params, _session, socket) do
     user_id = socket.assigns.current_user.id
 
+    sort_by = :profit_percent
+    asc = true
+
     socket =
       socket
-      |> assign(:sort_by, :profit_percent)
-      |> assign(:asc, true)
+      |> assign(:sort_by, sort_by)
+      |> assign(:asc, asc)
       |> assign_async([:ledgers, :profit_percent, :portfolio_svgs, :profit_svg], fn ->
         ledgers = Ledgers.all(user_id)
 
         {total_value, total_cost} = Ledgers.total_value_total_cost(ledgers)
 
-        ledgers = Ledgers.calculate_value_percent(ledgers, total_value)
+        ledgers =
+          Ledgers.calculate_value_percent(ledgers, total_value) |> sort_ledgers(sort_by, asc)
 
         profit_percent = Ledgers.profit_percent(user_id, total_value, total_cost)
 
